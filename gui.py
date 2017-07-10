@@ -16,10 +16,13 @@ class App:
         frame.pack()
         frame.config(padx=5, pady=5)
 
-        self.logo = PhotoImage(file = r".\images\ublogo.gif")
-        self.logo = self.logo.subsample(5,5)
-        self.ublogo = Label(frame,image=self.logo)
-        self.ublogo.grid(row = 0)
+        try:
+            self.logo = PhotoImage(file = r".\images\ublogo.gif")
+            self.logo = self.logo.subsample(5,5)
+            self.ublogo = Label(frame,image=self.logo)
+            self.ublogo.grid(row = 0)
+        except:
+            print("file not found")
 
         self.appTitle = Label(frame,text="UB LinkedIN Alumni People Finder")
         self.appTitle.grid(row = 0,column=1,columnspan=2)
@@ -67,7 +70,7 @@ class App:
 
     def searchFile(self):
         file = fd.askopenfile(initialdir="/", title="Select file",
-                              filetypes =[("Excel Workbook","*.xlsx"),("All Files","*.*")])
+                              filetypes =[("Excel Workbook","*.xlsx","*.xls"),("All Files","*.*")])
         #xlsx
         if file is None:
             print("No File Selected")
@@ -99,7 +102,7 @@ class App:
             c = crawler.LinkedinCrawler(miDict,"")
             c.crawl_linkedin()
             print(miDict["firstName"] + " " + miDict["lastName"] + " " + miDict["school"] + " " +
-                  miDict[" gradYr"] + " " + miDict["major"] + " " + miDict["degree"])
+                  miDict["gradYr"] + " " + miDict["major"] + " " + miDict["degree"])
 
     def err(self,text):
         top = Toplevel()
