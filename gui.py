@@ -16,7 +16,7 @@ class App:
         frame.pack()
         frame.config(padx=5, pady=5)
 
-        self.logo = PhotoImage(file = r"C:\Users\gamer\PycharmProjects\GreedySpider\images\ublogo.gif")
+        self.logo = PhotoImage(file = r".\images\ublogo.gif")
         self.logo = self.logo.subsample(5,5)
         self.ublogo = Label(frame,image=self.logo)
         self.ublogo.grid(row = 0)
@@ -26,7 +26,7 @@ class App:
 
     # left side; manual input fields
         startRow = 2
-        self.leftLabel = Label(frame,text = "Manualy enter an Alumni.")
+        self.leftLabel = Label(frame,text = "Manually enter an Alumni.")
         self.leftLabel.grid(row=1,columnspan=2)
         self.l1 = Label(frame, text="First Name: ")
         self.l2 = Label(frame, text="Last Name: ")
@@ -88,7 +88,7 @@ class App:
         miDict["firstName"] = self.e1.get().strip()
         miDict["lastName"] = self.e2.get().strip()
         miDict["school"] = self.e3.get().strip()
-        miDict[" gradYr"] = self.e4.get().strip()
+        miDict["gradYr"] = self.e4.get().strip()
         miDict["major"] = self.e5.get().strip()
         miDict["degree"] = self.e6.get().strip()
         print(miDict)
