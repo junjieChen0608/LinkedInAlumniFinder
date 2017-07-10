@@ -70,7 +70,7 @@ class App:
 
     def searchFile(self):
         file = fd.askopenfile(initialdir="/", title="Select file",
-                              filetypes =[("Excel Workbook","*.xlsx","*.xls"),("All Files","*.*")])
+                              filetypes =[("Excel Workbook","*.xlsx"),("All Files","*.*")])
         #xlsx
         if file is None:
             print("No File Selected")
