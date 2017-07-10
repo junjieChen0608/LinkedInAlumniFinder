@@ -5,7 +5,7 @@ import crawler
 from tkinter import *
 from tkinter import filedialog as fd
 
-validFileTypes=[".xlsx"]
+validFileTypes=("*.xlsx","*.xls")
 miDict = {}
 file=""
 
@@ -70,14 +70,14 @@ class App:
 
     def searchFile(self):
         file = fd.askopenfile(initialdir="/", title="Select file",
-                              filetypes =[("Excel Workbook","*.xlsx"),("All Files","*.*")])
+                              filetypes =[("Excel Files",validFileTypes),("All Files","*.*")])
         #xlsx
         if file is None:
             print("No File Selected")
         else:
             print(file.name)
             type=file.name.split('.')
-            if(type[1] != "xlsx"):
+            if(type[1] != "xlsx" or type[1] != "xls"):
                 types = ""
                 for x in validFileTypes:
                     if x == validFileTypes[-1]:
