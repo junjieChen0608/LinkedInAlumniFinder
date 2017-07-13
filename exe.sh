@@ -8,3 +8,5 @@ echo "- correct ${bold}\"credentials\"${normal} for crawling account"
 # Recommended to use "virtualenv" and "virtualenvwrapper" for Python3!
 pip3 install -r requirements.txt  # installs all necessary python packages listed in "requirements.txt"
 pyinstaller --onefile --noconsole gui.py  # creates single executable in "dist/" directory
+mv dist/gui .
+./gui
