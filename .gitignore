@@ -1,0 +1,8 @@
+# Pyinstaller files
+dist/
+__pycache__/
+build/
+*.spec
+
+# Pycharm Files
+.idea/

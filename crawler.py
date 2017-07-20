@@ -13,6 +13,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
+from sys import platform
+import os
 import random
 
 
@@ -39,8 +41,15 @@ class LinkedinCrawler:
     """
     def setup_driver(self, page):
         print("\nSetting up web driver...\n")
-        # TODO change your own chrome webdriver path
-        chrome_path = r"C:\Zone\ChromeDriver\chromedriver.exe"
+        chrome_path = ""
+        if platform.startswith('linux'):
+            chrome_path = os.path.abspath("drivers/chromedriver_linux64")
+        elif platform.startswith('darwin'):
+            chrome_path = os.path.abspath("drivers/chromedriver_mac64")
+        elif platform.startswith('win32') or platform.startswith('cygwin'):
+            chrome_path = os.path.abspath("drivers/chromedriver_win32.exe")
+        else:
+            raise ValueError('Operating System not supported!')
         self.driver = webdriver.Chrome(chrome_path)
         self.driver.get(page)
 
@@ -188,7 +197,7 @@ class LinkedinCrawler:
         print("Log-in landing page...\n")
         email = "371000549@qq.com"
         # TODO put password here
-        password = ""
+        password = "1313123"
         self.simulate_login(email, password)
 
         # TODO loop this function if need to do multiple search

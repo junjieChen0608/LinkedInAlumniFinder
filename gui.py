@@ -1,9 +1,12 @@
 #GUI file for LinkedIN People Finder App
 #Written by Jared Brown 7/3/17
 
-import crawler
 from tkinter import *
 from tkinter import filedialog as fd
+from sys import platform
+import crawler
+import os
+
 
 validFileTypes=("*.xlsx","*.xls")
 miDict = {}
@@ -17,7 +20,11 @@ class App:
         frame.config(padx=5, pady=5)
 
         try:
-            self.logo = PhotoImage(file = r".\images\ublogo.gif")
+            if platform.startswith("linux") or platform.startswith("darwin"):
+                ublogopath = os.path.abspath("images/ublogo.gif")
+                self.logo = PhotoImage(file=ublogopath)
+            else:
+                self.logo = PhotoImage(file=r'.\images\ublogo.gif')
             self.logo = self.logo.subsample(5,5)
             self.ublogo = Label(frame,image=self.logo)
             self.ublogo.grid(row = 0)
