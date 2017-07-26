@@ -23,7 +23,6 @@ import re
 
 class LinkedinCrawler:
     def __init__(self, info_dict, file_path):
-        # TODO change constructor signature to a dictionary and a file path string
         self.first_name = ""
         self.last_name = ""
         self.file_path = ""
@@ -32,8 +31,8 @@ class LinkedinCrawler:
         self.job_title_index = 24
         self.company_name_index = 25
         self.school1_index = 36
-        self.school2_index = 40
         self.school3_index = 44
+        # TODO start and end row should be passed from GUI
         self.start_row = 2
         self.end_row = 2
         self.read_book = None
@@ -48,13 +47,14 @@ class LinkedinCrawler:
             print("Batch search with file: " + self.file_path)
         self.driver = None
 
+
     """
     randomly pause for few seconds, make it slow and steady
     """
     def random_pause(self):
         random.seed()
-        to_pause = random.randint(1, 5)
-        self.driver.implicitly_wait(to_pause)
+        pause_time = random.randint(1, 5)
+        self.driver.implicitly_wait(pause_time)
 
 
     """
@@ -129,8 +129,8 @@ class LinkedinCrawler:
 
 
     """
-    populate the result set with coarse-grain filtered result
-    for further evaluation, Linkedin occasionally returns irrelevant search results for unknown reason
+    populate the result set with coarse-grain filtered result for further evaluation,
+    Linkedin occasionally returns irrelevant search results for unknown reason
     """
     def coarse_filter(self, potential_divs, result_set):
 
@@ -152,7 +152,7 @@ class LinkedinCrawler:
     fine-grain filter that evaluates accuracy score of all candidate profile links
     """
     def fine_filter(self, potential_link_set, row=0):
-        print("Checking " + str(len(potential_link_set)) + " potential profile links...\n")
+        print("Checking " + str(len(potential_link_set)) + " candidates profile links...\n")
         print("=" * 100)
         for link in potential_link_set:
             print("Clicked: " + link)
@@ -160,10 +160,10 @@ class LinkedinCrawler:
             score = 0
 
             #verify job history
-            score += self.verify_job(row)
+            score += self.verify_jobs(row)
 
             # verify education
-            score += self.verify_degree(row)
+            score += self.verify_degrees(row)
             print("Accuracy score:", score)
             print("=" * 100)
 
@@ -171,9 +171,9 @@ class LinkedinCrawler:
     """
     verify job history, check if input job title matches the latest job tile in this profile link
     """
-    def verify_job(self, row=0):
+    def verify_jobs(self, row=0):
         local_score = 0
-        print("verifying job...")
+        print("verifying jobs...")
         job_list = None
 
         # try catch block for error checking, because some profile link have no job data
@@ -189,11 +189,12 @@ class LinkedinCrawler:
         print(str(len(job_list)) + " job data found\n")
         # the top job information in this profile link
         latest_job_title = ""
-        latest_company = ""
+        latest_job_company = ""
         latest_job_info = ""
         # current job information from input spreadsheet
-        current_job_title = self.convert_str(self.read_sheet.cell(row, self.job_title_index).value)
-        current_company = self.convert_str(self.read_sheet.cell(row, self.company_name_index).value)
+        job_title_from_sheet = self.convert_str(self.read_sheet.cell(row, self.job_title_index).value)
+        job_company_from_sheet = self.convert_str(self.read_sheet.cell(row, self.company_name_index).value)
+
         # iterate on all job history in this profile link
         for job in job_list:
             # get job title
@@ -207,38 +208,39 @@ class LinkedinCrawler:
             h4_tags = job.find_elements(By.TAG_NAME, "h4")
             # temp job info is used to compose job description
             temp_job_info = ""
-            company_name = ""
+            company_name_sub = ""
+
             # iterate on all h4 tags in this job item, these h4 tags contain all info about this job title
             for h4 in h4_tags:
                 h4_text = h4.text
                 h4_text_sub = self.convert_str(h4_text)
                 # the actual company name is after this phrase, so we slice the string to get it
                 if "companyname" in h4_text_sub:
-                    company_name = h4_text_sub[len("companyname"):]
-                    if latest_company == "":
-                        latest_company = h4_text[len("Company Name")+1:]
+                    company_name_sub = h4_text_sub[len("companyname"):]
+                    if latest_job_company == "":
+                        latest_job_company = h4_text[len("Company Name")+1:]
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if latest_job_info == "":
                 latest_job_info = temp_job_info
 
-            #  check if current job is empty in the spreadsheet, if yes, just replace it with latest one and break the loop
-            if current_job_title == "":
-                current_job_title = latest_job_title
-                current_company = latest_company
+            #  check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn and break the loop
+            if job_title_from_sheet == "":
+                job_title_from_sheet = latest_job_title
+                job_company_from_sheet = latest_job_company
                 print("empty job is currently on record, break loop since new job is found")
-                print("current job: " + current_job_title + "\ncurrent company: " + current_company)
+                print("current job: " + job_title_from_sheet + "\ncurrent company: " + job_company_from_sheet)
                 break
 
             # check if job title matches
-            position_sub = self.convert_str(job_title)
-            if position_sub in current_job_title or current_job_title in position_sub:
+            job_title_sub = self.convert_str(job_title)
+            if job_title_sub in job_title_from_sheet or job_title_from_sheet in job_title_sub:
                 print("job title match!!")
                 local_score += 1
 
             # check if company matches
-            if current_company in company_name or company_name in current_company:
+            if job_company_from_sheet in company_name_sub or company_name_sub in job_company_from_sheet:
                 print("company name match!!")
                 local_score += 1
 
@@ -250,13 +252,13 @@ class LinkedinCrawler:
     """
     verify education data of this link, i.e., school name, major, grad year
     """
-    def verify_degree(self, row=0):
+    def verify_degrees(self, row=0):
         local_socre = 0
-        print("verifying degree...")
+        print("verifying degrees...")
         education_list = None
         # error checking, for some profile link don't even have education info
         try:
-            education_list = WebDriverWait(self.driver, 10).until(
+            education_list = WebDriverWait(self.driver, 5).until(
                 #  The reason why choose this xpath is <a> tags with this data-control-name wraps all the data we want
                 EC.presence_of_all_elements_located((By.XPATH,
                                                      """//a[@data-control-name="background_details_school"]"""))
@@ -276,7 +278,7 @@ class LinkedinCrawler:
                     # find school name
                     school = education.find_element(By.TAG_NAME, "h3")
                     school_name = school.text
-                    print(school_name)
+                    # print(school_name)
                     # check school
                     if self.check_school(self.convert_str(school_name)) == 1:
                         print("school match!!")
@@ -288,7 +290,7 @@ class LinkedinCrawler:
                     for major_info in major_infos:
                         # print(major_info.text)
                         major_text += major_info.text
-                    print(major_text)
+                    # print(major_text)
                     # check major and degree
                     if self.check_degree(self.convert_str(major_text),
                                          self.convert_str(self.read_sheet.cell(row, col + 1).value)) == 1:
@@ -308,7 +310,7 @@ class LinkedinCrawler:
                     elif len(grad_years) == 1:
                         grad_year = grad_years[0].text
 
-                    print("graduation year: " + grad_year + "\n")
+                    # print("graduation year: " + grad_year)
                     if self.check_gradyear(str(int(self.read_sheet.cell(row, col+2).value)), grad_year) == 1:
                         print("graduation year match!!")
                         local_socre += 1
@@ -321,6 +323,8 @@ class LinkedinCrawler:
     def check_school(self, input):
         if "universityatbuffalo" in input or "stateuniversityofnewyorkatbuffalo" in input:
             return 1
+        else:
+            return 0
 
 
     """
@@ -344,6 +348,7 @@ class LinkedinCrawler:
         else:
             return 1 if compare_to in base_text else 0
 
+
     """
     check major
     """
@@ -356,6 +361,7 @@ class LinkedinCrawler:
     """
     def check_gradyear(self, base_text, compare_to):
         return 1 if base_text == compare_to else 0
+
 
     """
     helper function to remove all non-alphabet characters in given string, and convert it to lower case
