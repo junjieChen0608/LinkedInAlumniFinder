@@ -3,41 +3,37 @@
 
 from tkinter import *
 from tkinter import filedialog as fd
-from sys import platform
-import crawler
-import os
 
+from alumnifinder.finder import crawler
+from alumnifinder.gui import images
 
-validFileTypes=("*.xlsx","*.xls")
+validFileTypes = ("*.xlsx", "*.xls")
 miDict = {}
-file=""
+file = ""
+
 
 class App:
-    def __init__(self,master):
+    def __init__(self, master):
         master.title("LinkedIN People Finder")
         frame = Frame(master)
         frame.pack()
         frame.config(padx=5, pady=5)
 
         try:
-            if platform.startswith("linux") or platform.startswith("darwin"):
-                ublogopath = os.path.abspath("images/ublogo.gif")
-                self.logo = PhotoImage(file=ublogopath)
-            else:
-                self.logo = PhotoImage(file=r'.\images\ublogo.gif')
-            self.logo = self.logo.subsample(5,5)
-            self.ublogo = Label(frame,image=self.logo)
-            self.ublogo.grid(row = 0)
+            self.logo = PhotoImage(file=images.logo)
+            self.logo = self.logo.subsample(5, 5)
+            self.ublogo = Label(frame, image=self.logo)
+            self.ublogo.grid(row=0)
         except:
             print("file not found")
 
-        self.appTitle = Label(frame,text="UB LinkedIN Alumni People Finder")
-        self.appTitle.grid(row = 0,column=1,columnspan=2)
+        self.appTitle = Label(frame, text="UB LinkedIN Alumni People Finder")
+        self.appTitle.grid(row=0, column=1, columnspan=2)
 
     # left side; manual input fields
         startRow = 2
-        self.leftLabel = Label(frame,text = "Manually enter an Alumni.")
-        self.leftLabel.grid(row=1,columnspan=2)
+        self.leftLabel = Label(frame, text="Manually enter an Alumni.")
+        self.leftLabel.grid(row=1, columnspan=2)
         self.l1 = Label(frame, text="First Name: ")
         self.l2 = Label(frame, text="Last Name: ")
         self.l3 = Label(frame, text="School: ")
@@ -64,20 +60,20 @@ class App:
         self.e5.grid(row=startRow+4, column=1)
         self.e6.grid(row=startRow+5, column=1)
 
-        okbtn = Button(frame,text = "OK",command=self.ok)
-        okbtn.grid(row=startRow+6,columnspan=2,pady=5)
+        okbtn = Button(frame, text="OK", command=self.ok)
+        okbtn.grid(row=startRow + 6, columnspan=2, pady=5)
     #end manual input fields
 
     #right side, file explorer for excel file
         self.rightLabel = Label(frame, text="Search for a document.")
-        self.rightLabel.grid(row=1,column=2,padx=5)
-        openFileBtn = Button(frame,text = "...",command=self.searchFile)
+        self.rightLabel.grid(row=1, column=2, padx=5)
+        openFileBtn = Button(frame, text="...", command=self.searchFile)
         openFileBtn.grid(row = startRow, column = 2)
     #end file input
 
     def searchFile(self):
         file = fd.askopenfile(initialdir="/", title="Select file",
-                              filetypes =[("Excel Files",validFileTypes),("All Files","*.*")])
+                              filetypes=[("Excel Files", validFileTypes), ("All Files", "*.*")])
         #xlsx
         if file is None:
             print("No File Selected")
@@ -91,7 +87,7 @@ class App:
                         types += x
                     else:
                         types += x + ", "
-                self.err("File type invalid.\nValid file types are: " + types)
+                self.err_message("File type invalid.\nValid file types are: " + types)
 
     def ok(self):
         #first,last must be mandatory
@@ -104,27 +100,18 @@ class App:
         print(miDict)
         #school,gradution yr, major, degree
         if miDict["firstName"] == "" or miDict["lastName"] == "":
-            self.err("First and last name are required for manual search.")
+            self.err_message("First and last name are required for manual search.")
         else:
-            c = crawler.LinkedinCrawler(miDict,"")
+            c = crawler.LinkedinCrawler(miDict, "")
             c.crawl_linkedin()
             print(miDict["firstName"] + " " + miDict["lastName"] + " " + miDict["school"] + " " +
                   miDict["gradYr"] + " " + miDict["major"] + " " + miDict["degree"])
 
-    def err(self,text):
+    def err_message(self, text):
         top = Toplevel()
         top.title("Error")
         top.configure(width=100)
-        msg = Message(top,text=text, justify="center")
+        msg = Message(top, text=text, justify="center")
         msg.configure(width=250)
         msg.pack()
         print("no name")
-
-#initializes tkinter
-#creates window with bar and decorations specified by window manager
-root = Tk()
-
-app = App(root)
-
-#makes window appear
-root.mainloop()

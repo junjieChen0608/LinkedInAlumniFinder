@@ -1,21 +1,14 @@
-"""
-Please read me if you are a developer
-
-You need to:
-1, No doubt that you need to install Chrome Webdriver and Selenium in order to get the whole program running
-2, change the Chrome Webdriver path to your own path in the setup_driver()
-3, fill in dummy Linkedin account before the call of simulate_login()
-
-"""
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import TimeoutException
-from sys import platform
-import os
 import random
+from sys import platform
+
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from alumnifinder.finder import drivers
 
 
 class LinkedinCrawler:
@@ -41,13 +34,12 @@ class LinkedinCrawler:
     """
     def setup_driver(self, page):
         print("\nSetting up web driver...\n")
-        chrome_path = ""
         if platform.startswith('linux'):
-            chrome_path = os.path.abspath("drivers/chromedriver_linux64")
+            chrome_path = drivers.LINUX_DRIVER_PATH
         elif platform.startswith('darwin'):
-            chrome_path = os.path.abspath("drivers/chromedriver_mac64")
+            chrome_path = drivers.MAC_DRIVER_PATH
         elif platform.startswith('win32') or platform.startswith('cygwin'):
-            chrome_path = os.path.abspath("drivers/chromedriver_win32.exe")
+            chrome_path = drivers.WIN_DRIVER_PATH
         else:
             raise ValueError('Operating System not supported!')
         self.driver = webdriver.Chrome(chrome_path)
@@ -127,10 +119,10 @@ class LinkedinCrawler:
     fine-grain filter that evaluates accuracy score of all candidate profile links
     """
     def fine_filter(self, result_set):
+        line_seperator = "-" * 60
         # TODO design scoring mechanism
 
-        print("Checking " + str(len(result_set)) + " potential profile links...\n")
-        print("--------------------------------------------------------------------------------------------")
+        print("Checking " + str(len(result_set)) + " potential profile links...\n" + line_seperator)
         for link in result_set:
             print("Clicked: " + link)
             self.driver.get(link)
@@ -144,7 +136,7 @@ class LinkedinCrawler:
                                                          """//*[@data-control-name="background_details_school"]"""))
                 )
             except TimeoutException:
-                print("No education data found!!\n--------------------------------------------------------------------------------------------")
+                print("No education data found!!\n" + line_seperator)
                 continue
 
             print(str(len(education_info)) + " education data found\n")
@@ -164,8 +156,7 @@ class LinkedinCrawler:
                 grad_year = ""
                 if len(grad_years) == 2:
                     grad_year = grad_years[1].text
-                    print("graduation year: " + grad_year + "\n")
-            print("--------------------------------------------------------------------------------------------")
+                    print("graduation year: " + grad_year + "\n" + line_seperator)
 
     def crawl_utl(self):
         print("Start searching...\n")
