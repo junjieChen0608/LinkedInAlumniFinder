@@ -2,7 +2,6 @@
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 
-
 build:
 	@echo "BUILD START"
 	pyinstaller --onefile --noconsole main.py
@@ -15,4 +14,4 @@ clean:
 	@rm -rf __pycache__/
 
 virtualenv:
-	$(PYTHON_BIN)/pip install -r requirements.txt	
+	$(PYTHON_BIN)/pip3 install -r requirements.txt	

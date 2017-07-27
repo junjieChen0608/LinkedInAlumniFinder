@@ -1,3 +1,4 @@
 docker==2.4.2
 pyinstaller==3.2.1
 selenium==3.4.3
+pytest==3.1.3
