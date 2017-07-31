@@ -14,6 +14,7 @@ file = ""
 
 class App:
     def __init__(self, master):
+        self.file_path = ""
         master.title("LinkedIN People Finder")
         frame = Frame(master)
         frame.pack()
@@ -72,15 +73,16 @@ class App:
     #end file input
 
     def searchFile(self):
-        file = fd.askopenfile(initialdir="/", title="Select file",
-                              filetypes=[("Excel Files", validFileTypes), ("All Files", "*.*")])
-        #xlsx
-        if file is None:
+        self.file_path = fd.askopenfile(initialdir="/", title="Select file",
+                              filetypes=[("Excel Files",validFileTypes),("All Files","*.*")])
+        #xlsx and xls
+        if self.file_path is None:
             print("No File Selected")
         else:
-            print(file.name)
-            type=file.name.split('.')
-            if(type[1] != "xlsx" or type[1] != "xls"):
+            print("file path: " + self.file_path.name)
+            type=self.file_path.name.split('.')
+            print("type: " + type[1])
+            if(type[1] != "xlsx" and type[1] != "xls"):
                 types = ""
                 for x in validFileTypes:
                     if x == validFileTypes[-1]:
@@ -98,8 +100,17 @@ class App:
         miDict["major"] = self.e5.get().strip()
         miDict["degree"] = self.e6.get().strip()
         print(miDict)
-        #school,gradution yr, major, degree
-        if miDict["firstName"] == "" or miDict["lastName"] == "":
+        dictFilled = False
+        for val in miDict.values():
+            if val != "":
+                dictFilled = True
+
+        if dictFilled and self.file_path != "":
+            self.err_message("You cannot do manual search and batch search at the same time.")
+        elif not dictFilled and self.file_path != "":
+            c = crawler.LinkedinCrawler(miDict, self.file_path.name)
+            c.crawl_linkedin()
+        elif self.file_path == "" and (miDict["firstName"] == "" or miDict["lastName"] == ""):
             self.err_message("First and last name are required for manual search.")
         else:
             c = crawler.LinkedinCrawler(miDict, "")
