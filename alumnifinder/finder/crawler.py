@@ -1,4 +1,5 @@
 import random
+import re
 from sys import platform
 
 from selenium import webdriver
@@ -7,14 +8,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from alumnifinder.finder import drivers
-from sys import platform
-import os
-import random
 from xlrd import open_workbook
 from xlutils.copy import copy
-import re
+
+from alumnifinder.finder import drivers
 
 
 class LinkedinCrawler:
@@ -90,12 +87,8 @@ class LinkedinCrawler:
         login_password.send_keys(password)
         sign_in_btn.click()
 
-
-    """
-    start searching
-    """
     def start_search(self, region="buffalo"):
-
+        """start searching"""
         search_bar = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, """//*[@class="ember-text-field ember-view"]"""))
         )
@@ -104,11 +97,8 @@ class LinkedinCrawler:
         search_bar.send_keys(self.first_name + " " + self.last_name + " " + region)
         search_bar.send_keys(Keys.RETURN)
 
-    """
-    wait result page to render
-    """
     def wait_result(self):
-
+        """wait result page to render"""
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_all_elements_located((By.XPATH, """//div[@class="search-result__info pt3 pb4 ph0"]"""))
@@ -118,12 +108,11 @@ class LinkedinCrawler:
             print("No match!!")
             return []
 
-    """
-    populate the result set with coarse-grain filtered result for further evaluation,
-    Linkedin occasionally returns irrelevant search results for unknown reason
-    """
     def coarse_filter(self, potential_divs, result_set):
+        """Populate the result set with coarse-grain filtered result for further evaluation.
 
+            Linkedin occasionally returns irrelevant search results for unknown reason
+        """
         for div in potential_divs:
             inner_anchor = div.find_element(By.TAG_NAME, "a")
             profile_link = inner_anchor.get_attribute("href")
@@ -137,10 +126,8 @@ class LinkedinCrawler:
                 result_set.add(profile_link)
         print(str(len(result_set)) + " candidates survived from coarse-grain filter")
 
-    """
-    fine-grain filter that evaluates accuracy score of all candidate profile links
-    """
     def fine_filter(self, potential_link_set, row=0):
+        """fine-grain filter that evaluates accuracy score of all candidate profile links"""
         print("Checking " + str(len(potential_link_set)) + " candidates profile links...\n")
         print("=" * 100)
         for link in potential_link_set:
@@ -148,7 +135,7 @@ class LinkedinCrawler:
             self.driver.get(link)
             score = 0
 
-            #verify job history
+            # verify job history
             score += self.verify_jobs(row)
 
             # verify education
@@ -156,10 +143,8 @@ class LinkedinCrawler:
             print("Accuracy score:", score)
             print("=" * 100)
 
-    """
-    verify job history, check if input job title matches the latest job tile in this profile link
-    """
     def verify_jobs(self, row=0):
+        """verify job history, check if input job title matches the latest job tile in this profile link"""
         local_score = 0
         print("verifying jobs...")
         job_list = None
@@ -167,7 +152,7 @@ class LinkedinCrawler:
         # try catch block for error checking, because some profile link have no job data
         try:
             job_list = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located( (By.XPATH,
+                EC.presence_of_all_elements_located((By.XPATH,
                                                      """//a[@data-control-name="background_details_company"]"""))
             )
         except:
@@ -192,7 +177,7 @@ class LinkedinCrawler:
             if latest_job_title == "":
                 latest_job_title += job_title
 
-            #  get all other job info
+            # get all other job info
             h4_tags = job.find_elements(By.TAG_NAME, "h4")
             # temp job info is used to compose job description
             temp_job_info = ""
@@ -206,14 +191,14 @@ class LinkedinCrawler:
                 if "companyname" in h4_text_sub:
                     company_name_sub = h4_text_sub[len("companyname"):]
                     if latest_job_company == "":
-                        latest_job_company = h4_text[len("Company Name")+1:]
+                        latest_job_company = h4_text[len("Company Name") + 1:]
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if latest_job_info == "":
                 latest_job_info = temp_job_info
 
-            #  check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn and break the loop
+            # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn and break the loop
             if job_title_from_sheet == "":
                 job_title_from_sheet = latest_job_title
                 job_company_from_sheet = latest_job_company
@@ -236,11 +221,8 @@ class LinkedinCrawler:
         print("*" * 100)
         return local_score
 
-
-    """
-    verify education data of this link, i.e., school name, major, grad year
-    """
     def verify_degrees(self, row=0):
+        """verify education data of this link, i.e., school name, major, grad year"""
         local_score = 0
         print("verifying degrees...")
         education_list = None
@@ -259,7 +241,7 @@ class LinkedinCrawler:
 
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
-        for col in range(self.school1_index, self.school3_index+1, 4):
+        for col in range(self.school1_index, self.school3_index + 1, 4):
             if self.read_sheet.cell(row, col).value != "":
                 # iterate on all education data in this profile link
                 for education in education_list:
@@ -285,7 +267,7 @@ class LinkedinCrawler:
                         print("degree match!!")
                         local_score += 1
 
-                    if self.check_major(self.convert_str(self.read_sheet.cell(row, col+3).value),
+                    if self.check_major(self.convert_str(self.read_sheet.cell(row, col + 3).value),
                                         self.convert_str(major_text)) == 1:
                         print("major match!!")
                         local_score += 1
@@ -299,26 +281,20 @@ class LinkedinCrawler:
                         grad_year = grad_years[0].text
 
                     # print("graduation year: " + grad_year)
-                    if self.check_gradyear(str(int(self.read_sheet.cell(row, col+2).value)), grad_year) == 1:
+                    if self.check_gradyear(str(int(self.read_sheet.cell(row, col + 2).value)), grad_year) == 1:
                         print("graduation year match!!")
                         local_score += 1
         return local_score
 
-
-    """
-    check school name with all possible synonyms
-    """
     def check_school(self, input):
+        """check school name with all possible synonyms"""
         if "universityatbuffalo" in input or "stateuniversityofnewyorkatbuffalo" in input:
             return 1
         else:
             return 0
 
-
-    """
-    check if degree matches
-    """
     def check_degree(self, base_text, compare_to):
+        """check if degree matches"""
         if ("bachelor" in base_text or "master" in base_text) and "science" in base_text:
             if "bs" in compare_to:
                 return 1
@@ -336,32 +312,20 @@ class LinkedinCrawler:
         else:
             return 1 if compare_to in base_text else 0
 
-
-    """
-    check major
-    """
     def check_major(self, base_text, compare_to):
+        """check major"""
         return 1 if base_text in compare_to else 0
 
-
-    """
-    check graduation year
-    """
     def check_gradyear(self, base_text, compare_to):
+        """check graduation year"""
         return 1 if base_text == compare_to else 0
 
-
-    """
-    helper function to remove all non-alphabet characters in given string, and convert it to lower case
-    """
     def convert_str(self, input):
+        """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
         return re.sub("\W", "", input).lower()
 
-
-    """
-    crawl utility function for loop
-    """
     def crawl_utl(self, row=0):
+        """crawl utility function for loop"""
         print("Start searching " + self.first_name + " " + self.last_name + " ...\n")
         self.start_search()
 
@@ -382,12 +346,8 @@ class LinkedinCrawler:
         """
         self.fine_filter(potential_link_set, row)
 
-
-    """
-    main routine for UI invocation
-    """
     def crawl_linkedin(self):
-
+        """main routine for UI invocation"""
         page = "https://www.linkedin.com"
         print("crawling: " + page)
         self.setup_driver(page)
@@ -398,14 +358,14 @@ class LinkedinCrawler:
         self.simulate_login(email, password)
 
         # TODO batch search, output modified write book
-        if(self.file_path != ""):
+        if (self.file_path != ""):
             #  construct read book and write book
             print("copying write book...\n")
             self.read_book = open_workbook(self.file_path)
             self.read_sheet = self.read_book.sheet_by_index(0)
             self.write_book = copy(self.read_book)
             self.write_sheet = self.write_book.get_sheet(0)
-            for row in range(self.start_row-1, self.end_row, 1):
+            for row in range(self.start_row - 1, self.end_row, 1):
                 self.first_name = self.read_sheet.cell(row, self.first_name_index).value.lower()
                 self.last_name = self.read_sheet.cell(row, self.last_name_index).value.lower()
                 self.crawl_utl(row)
