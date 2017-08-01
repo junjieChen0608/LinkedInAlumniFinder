@@ -12,6 +12,7 @@ from xlrd import open_workbook
 from xlutils.copy import copy
 
 from alumnifinder.finder import drivers
+from alumnifinder.utils import jsonreader
 
 
 class LinkedinCrawler:
@@ -40,18 +41,14 @@ class LinkedinCrawler:
             print("Batch search with file: " + self.file_path)
         self.driver = None
 
-    """
-    randomly pause for few seconds, make it slow and steady
-    """
     def random_pause(self):
+        """randomly pause for few seconds, make it slow and steady"""
         random.seed()
         pause_time = random.randint(1, 5)
         self.driver.implicitly_wait(pause_time)
 
-    """
-    web driver set up
-    """
     def setup_driver(self, page):
+        """web driver set up"""
         print("\nSetting up web driver...\n")
         if platform.startswith('linux'):
             chrome_path = drivers.LINUX_DRIVER_PATH
@@ -64,13 +61,8 @@ class LinkedinCrawler:
         self.driver = webdriver.Chrome(chrome_path)
         self.driver.get(page)
 
-    """
-    simulate login
-    """
-    def simulate_login(self, email, password):
-        if email == "" or password == "":
-            print("email and password cannot be empty.")
-            raise RuntimeError
+    def simulate_login(self):
+        """simulate login"""
 
         # automated login process
         login_email = WebDriverWait(self.driver, 10).until(
@@ -79,13 +71,17 @@ class LinkedinCrawler:
         login_password = self.driver.find_element_by_class_name("login-password")
         sign_in_btn = self.driver.find_element_by_id("login-submit")
 
-        # input credentials then log in
-        print("Inputting credentials...\n")
-        login_email.clear()
-        login_email.send_keys(email)
-        login_password.clear()
-        login_password.send_keys(password)
-        sign_in_btn.click()
+        # input config then log in
+        print("Inputting config...\n")
+        for account in jsonreader.get_credentials():
+            # TODO: change elements when sent to a different login page
+            login_email.clear()
+            login_email.send_keys(account.get("email"))
+            login_password.clear()
+            login_password.send_keys(account.get("password"))
+            sign_in_btn.click()
+            if self.driver.title == "LinkedIn":  # Successfully logged-in
+                break
 
     def start_search(self, region="buffalo"):
         """start searching"""
@@ -353,9 +349,7 @@ class LinkedinCrawler:
         self.setup_driver(page)
 
         print("Log-in landing page...\n")
-        email = "371000549@qq.com"
-        password = "1313123"
-        self.simulate_login(email, password)
+        self.simulate_login()
 
         # TODO batch search, output modified write book
         if (self.file_path != ""):

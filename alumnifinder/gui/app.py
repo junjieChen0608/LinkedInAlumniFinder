@@ -21,7 +21,7 @@ class App:
         frame.config(padx=5, pady=5)
 
         try:
-            self.logo = PhotoImage(file=images.logo)
+            self.logo = PhotoImage(file=images.logo_path)
             self.logo = self.logo.subsample(5, 5)
             self.ublogo = Label(frame, image=self.logo)
             self.ublogo.grid(row=0)

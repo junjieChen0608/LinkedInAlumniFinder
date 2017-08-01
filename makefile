@@ -1,4 +1,4 @@
-.PHONY: clean build virtualenv
+.PHONY: clean build test virtualenv
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 
@@ -14,4 +14,10 @@ clean:
 	@rm -rf __pycache__/
 
 virtualenv:
-	$(PYTHON_BIN)/pip3 install -r requirements.txt	
+	$(PYTHON_BIN)/pip3 install -r requirements.txt
+
+test:
+	python3 -m pytest tests/
+
+docker-image:
+	docker build -t alumni-finder-machine .

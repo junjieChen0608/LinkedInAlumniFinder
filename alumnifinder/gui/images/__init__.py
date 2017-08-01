@@ -1,4 +1,3 @@
 import os
 
-dir = os.path.dirname(__file__)
-logo = os.path.join(dir, "ublogo.gif")
+logo_path = os.path.join(os.path.dirname(__file__), "ublogo.gif")
