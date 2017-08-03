@@ -22,4 +22,4 @@ class TestPreSetup:
             if e.errno == errno.ENOENT:
                 raise OSError("\'make\' not installed")
             else:
-                raise e  # unknown error
+                raise e  # other error

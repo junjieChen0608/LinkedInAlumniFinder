@@ -1,4 +1,4 @@
-.PHONY: clean build test virtualenv
+.PHONY: clean docker-image build test virtualenv
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 
@@ -18,6 +18,7 @@ virtualenv:
 
 test:
 	python3 -m pytest tests/
+	@rm -rf .cache/
 
 docker-image:
 	docker build -t alumni-finder-machine .

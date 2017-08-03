@@ -1,0 +1,31 @@
+[
+  {
+    "category": "schoolnames",
+    "data": [
+      "buffalo",
+      "stateuniversityofnewyorkatbuffalo",
+      "suny buffalo",
+      "universityatbuffalo",
+      "universityofbuffalo",
+      "ubuffalo",
+      "ub"
+    ]
+  },
+  {
+    "category": "degrees",
+    "data": [
+      "bachelor of arts",
+      "bachelor of science",
+      "ba",
+      "bs",
+      "b.a.",
+      "b.s.",
+      "master of arts",
+      "master of science",
+      "ma",
+      "ms",
+      "m.a.",
+      "m.s."
+    ]
+  }
+]

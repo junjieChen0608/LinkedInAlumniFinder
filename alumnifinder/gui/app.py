@@ -109,12 +109,12 @@ class App:
         if dict_filled and self.file_path != "":
             self.err_message("You cannot do manual search and batch search at the same time.")
         elif not dict_filled and self.file_path != "":
-            c = crawler.LinkedinCrawler(miDict, self.file_path.name)
+            c = crawler.Crawler(miDict, self.file_path.name)
             c.crawl_linkedin()
         elif self.file_path == "" and (miDict["firstName"] == "" or miDict["lastName"] == ""):
             self.err_message("First and last name are required for manual search.")
         else:
-            c = crawler.LinkedinCrawler(miDict, "")
+            c = crawler.Crawler(miDict, "")
             c.crawl_linkedin()
             print(miDict["firstName"] + " " + miDict["lastName"] + " " + miDict["school"] + " " +
                   miDict["gradYr"] + " " + miDict["major"] + " " + miDict["degree"])
