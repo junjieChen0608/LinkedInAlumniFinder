@@ -119,7 +119,7 @@ class Crawler(Client):
 
         # TODO: Add kwargs to keys
         search_bar.clear()
-        search_bar.send_keys(self.first_name + " " + self.last_name + " " + self.region)
+        search_bar.send_keys(self.first_name + " " + self.last_name + " " + self.linkedin_area)
         search_bar.send_keys(Keys.RETURN)
         logger.debug('Searching...')
 

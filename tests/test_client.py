@@ -57,4 +57,5 @@ class TestClient:
             Client(excel_file=txt_file)
 
     def test_kwargs_init(self):
-        Client(linkedin_area='New York City')
+        c = Client(linkedin_area='New York City')
+        c.linkedin_area = 'New York City'

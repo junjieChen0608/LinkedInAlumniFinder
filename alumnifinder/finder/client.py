@@ -1,4 +1,4 @@
-from alumnifinder.excel import parser
+from alumnifinder.excel import handler
 
 
 class Client:
@@ -11,7 +11,7 @@ class Client:
         first_name (str): first name.
         last_name (str): last name.
         major (str): major of degree.
-        linkedin_area (str): LinkedIn area from alumni.
+        linkedin_area (str): alumni's LinkedIn area.
         school_dept (str): department of major.
         work_city (str): city where alumni works.
         work_company (str): company alumni works for.
@@ -32,7 +32,7 @@ class Client:
         self.first_name = first_name
         self.last_name = last_name
         self.major = major
-        self.region = linkedin_area
+        self.linkedin_area = linkedin_area
         self.school_dept = school_dept
         self.work_city = work_city
         self.work_company = work_company
@@ -44,6 +44,6 @@ class Client:
         if linkedin_area:
             pass
         elif excel_file:
-            excel = parser.get(excel_file)
+            excel = handler.get(excel_file)
         else:
             raise ValueError("All arguments are empty.")
