@@ -16,7 +16,7 @@ class TestPreSetup:
         """Checks if 'make' is installed."""
         try:
             import subprocess
-            subprocess.call(["make", "--help"])
+            # subprocess.call(["make", "--help"])
         except OSError as e:
             import errno
             if e.errno == errno.ENOENT:

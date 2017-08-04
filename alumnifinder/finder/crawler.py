@@ -3,18 +3,16 @@ import random
 import re
 from sys import platform
 
+import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
-from xlrd import open_workbook
-from xlutils.copy import copy
 
 from alumnifinder.finder import drivers
-from alumnifinder.finder.client import Client
 from alumnifinder.utils import jsonreader
 
 # logger
@@ -29,26 +27,60 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-class Crawler(Client):
-    """Using the kwargs, inherited from Client, searches LinkedIn for updates on alumni.
+class Crawler:
+    """Searches LinkedIn for updates on alumni.
+
+    Args:
+        data (panda's DataFrame): data from excel file.
+        degree (str): type of degree.
+        degree_year (int): year degree earned.
+        first_name (str): first name.
+        last_name (str): last name.
+        major (str): major of degree.
+        linkedin_area (str): alumni's LinkedIn area.
+        school_dept (str): department of major.
+        work_city (str): city where alumni works.
+        work_company (str): company alumni works for.
+        work_state (str): state alumni works in.
+        work_title (str): alumni's work title.
 
     Attributes:
-        driver: Selenium webdriver, used for web scraping.
-        **kwargs: see Client class for argument descriptions.
+        driver (Selenium WebDriver): used for web scraping.
+        start_region (str): initial start of web search.
     """
 
-    def __init__(self, **kwargs):
-        """Initializes Crawler class with **kwargs from Client class."""
-        super(Crawler, self).__init__(**kwargs)
+    def __init__(self, data=None, degree=None, degree_year=None, first_name=None, last_name=None, major=None,
+                 linkedin_area=None, school_dept=None, work_city=None, work_company=None, work_state=None,
+                 work_title=None):
+        """Initializes Crawler class with optional arguments."""
+        self.data = data
+        self.degree = degree
+        self.degree_year = degree_year
+        self.first_name = first_name
+        self.last_name = last_name
+        self.major = major
+        self.linkedin_area = linkedin_area
+        self.school_dept = school_dept
+        self.work_city = work_city
+        self.work_company = work_company
+        self.work_state = work_state
+        self.work_title = work_title
+
         self.driver = None
+        self.start_region = 'Buffalo'
 
     def setup_driver(self) -> None:
         """Locates path of WebDriver Chrome executable and sets it to the driver.
+
+        The Selenium WebDriver requires a browser executable in order to open a browser and use the web. We're using
+        the Chrome WebDriver for this process and it requires that you have Google Chrome Web Browser pre-installed on
+        your machine.
 
         Raises:
             OSError: Unsupported operating system found.
         """
         logger.debug('Setting up web driver...')
+
         if platform.startswith('linux'):
             chrome_path = drivers.LINUX_DRIVER_PATH
         elif platform.startswith('darwin'):
@@ -59,24 +91,34 @@ class Crawler(Client):
             msg = 'Unsupported operating system found.'
             logger.exception(msg)
             raise OSError(msg)
-        self.driver = webdriver.Chrome(chrome_path)
+        self.driver = webdriver.Chrome(chrome_path)  # sets member variable.
 
     def random_pause(self) -> None:
-        """Randomly pauses driver."""
+        """Randomly pauses WebDriver.
+
+        The purpose is to lower the chances of web scraping detection.
+        """
         self.driver.implicitly_wait(random.randint(1, 5))
 
     def login(self) -> None:
         """WebDriver finds web elements for login and performs login actions.
 
+        The Selenium WebDriver locates the necessary web elements required for the login process. Since LinkedIn can
+        change their HTML attributes without notice, this method is prone to failure in the future. If the HTML has
+        changed, a maintainer will have to reassign the necessary attributes for the login process. This can easily be
+        done by going to the website and using Google Chrome's Web Developers Tools to find the necessary HTML elements.
+
         Raises:
             NoSuchElementException: Web element could not be found, (most likely changed).
-            EOFError: All credentials in 'config/cred.json' failed to login.
+            EOFError: All credentials in 'config/cred.json' failed to login. This could be due to a scraper account
+            being blocked.
         """
+        logger.debug('Attempting login...')
         for account in jsonreader.get_credentials():
             logger.debug('Finding web element(s)...')
             try:
                 login_email = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, 'login-email'))
+                    expected_conditions.presence_of_element_located((By.CLASS_NAME, 'login-email'))
                 )
                 login_password = self.driver.find_element_by_class_name('login-password')
                 sign_in_btn = self.driver.find_element_by_id('login-submit')
@@ -93,11 +135,12 @@ class Crawler(Client):
             sign_in_btn.click()
             if self.driver.title == 'LinkedIn':
                 logger.debug('Logged-in.')
-                break
+                break  # successful log-in
             else:
+                logger.debug('Trying to login again...')
                 self.driver.get('https://www.linkedin.com')  # try-again with a different account
 
-        msg = 'Could not login with any credentials.'
+        msg = 'Could not login with any credentials.'  # log-in failure
         logger.exception(msg)
         raise EOFError(msg)
 
@@ -110,26 +153,33 @@ class Crawler(Client):
         logger.debug('Finding web element(s)...')
         try:
             search_bar = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@class="ember-text-field ember-view"]'))
+                expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="ember-text-field ember-view"]'))
             )
         except NoSuchElementException:
             msg = 'Web element could not be found.'
             logger.exception(msg)
             raise NoSuchElementException(msg)
-
-        # TODO: Add kwargs to keys
+        logger.debug('Inputting arguments into search bar...')
+        # TODO: Add other arguments to search bar
         search_bar.clear()
-        search_bar.send_keys(self.first_name + " " + self.last_name + " " + self.linkedin_area)
+        search_bar.send_keys(self.first_name + " " + self.last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
         logger.debug('Searching...')
 
-    def wait_for_search(self) -> list:
-        """WebDriver waits for result page to render."""
+    def get_search_results(self) -> list:
+        """WebDriver waits for search results and grabs web elements.
+
+        Returns:
+            list of "div"'s from search results.
+
+        Raises:
+            NoSuchElementException: Web element could not be found, (most likely changed).
+        """
         logger.debug('Waiting for search results...')
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located((By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]'))
-            )
+                expected_conditions.presence_of_all_elements_located((
+                    By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]')))
             return potential_divs
         except NoSuchElementException:
             msg = 'Web element could not be found.'
@@ -139,25 +189,36 @@ class Crawler(Client):
             logger.debug('No match found.')
             return []
 
-    def coarse_filter(self, potential_divs, result_set):
+    def coarse_filter(self, potential_divs: list, result_set: set) -> None:
         """Populate the result set with coarse-grain filtered result for further evaluation.
 
-            Linkedin occasionally returns irrelevant search results for unknown reason
+        Linkedin occasionally returns irrelevant search results for unknown reason
+
+        Args:
+            potential_divs (list):
+            result_set (set):
         """
         for div in potential_divs:
-            inner_anchor = div.find_element(By.TAG_NAME, "a")
-            profile_link = inner_anchor.get_attribute("href")
+            try:
+                inner_anchor = div.find_element(By.TAG_NAME, "a")
+                profile_link = inner_anchor.get_attribute("href")
 
-            inner_h3 = inner_anchor.find_element(By.TAG_NAME, "h3")
-            inner_h3_id = inner_h3.get_attribute("id")
+                inner_h3 = inner_anchor.find_element(By.TAG_NAME, "h3")
+                inner_h3_id = inner_h3.get_attribute("id")
 
-            inner_span = inner_anchor.find_element(By.XPATH, "//*[@id=\"" + inner_h3_id + "\"]/span[1]/span")
-            inner_span_text = inner_span.text.lower().replace(" ", "")
+                inner_span = inner_anchor.find_element(By.XPATH, "//*[@id=\"" + inner_h3_id + "\"]/span[1]/span")
+                inner_span_text = inner_span.text.lower().replace(" ", "")
+            except NoSuchElementException:
+                msg = 'Web element could not be found.'
+                logger.exception(msg)
+                raise NoSuchElementException(msg)
+
             if self.first_name in inner_span_text and self.last_name in inner_span_text:
                 result_set.add(profile_link)
+
         logger.debug(str(len(result_set)) + ' candidates survived from coarse-grain filter.')
 
-    def fine_filter(self, potential_link_set, row=0):
+    def fine_filter(self, potential_link_set: set, row) -> None:
         """fine-grain filter that evaluates accuracy score of all candidate profile links"""
         logger.debug('Checking ' + str(len(potential_link_set)) + ' candidates profile links...')
         logger.debug('=' * 100)
@@ -165,26 +226,21 @@ class Crawler(Client):
             logger.debug('Clicked: ' + link)
             self.driver.get(link)
             score = 0
-
-            # verify job history
-            score += self.verify_jobs(row)
-
-            # verify education
-            score += self.verify_degrees(row)
+            score += self.verify_jobs(row)  # verify job history
+            score += self.verify_degrees(row)  # verify education
             logger.debug('Accuracy score:', score)
             logger.debug('=' * 100)
 
-    def verify_jobs(self, row=0):
+    def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
         logger.debug('Verifying jobs...')
         local_score = 0
-        job_list = None
 
         # try catch block for error checking, because some profile link have no job data
         try:
             job_list = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_all_elements_located((By.XPATH, '//a[@data-control-name="background_details_company"]'))
-            )
+                expected_conditions.presence_of_all_elements_located((
+                    By.XPATH, '//a[@data-control-name="background_details_company"]')))
         except:
             logger.debug('No job data found.')
             return local_score
@@ -195,20 +251,24 @@ class Crawler(Client):
         latest_job_company = ""
         latest_job_info = ""
         # current job information from input spreadsheet
-        job_title_from_sheet = self.convert_str(self.read_sheet.cell(row, self.job_title_index).value)
-        job_company_from_sheet = self.convert_str(self.read_sheet.cell(row, self.company_name_index).value)
+        job_title_from_excel = row['WORK_TITLE']
+        job_company_from_excel = row['WORK_COMPANY_NAME1']
 
         # iterate on all job history in this profile link
         for job in job_list:
-            # get job title
-            job_title = job.find_element(By.TAG_NAME, "h3").text
+
+            try:
+                job_title = job.find_element(By.TAG_NAME, "h3").text  # get job title
+                h4_tags = job.find_elements(By.TAG_NAME, "h4")  # get all other job info
+            except NoSuchElementException:
+                msg = 'Web element could not be found.'
+                logger.exception(msg)
+                raise NoSuchElementException(msg)
 
             # record the top job title as the latest job title
-            if latest_job_title == "":
+            if latest_job_title is "":
                 latest_job_title += job_title
 
-            # get all other job info
-            h4_tags = job.find_elements(By.TAG_NAME, "h4")
             # temp job info is used to compose job description
             temp_job_info = ""
             company_name_sub = ""
@@ -220,31 +280,32 @@ class Crawler(Client):
                 # the actual company name is after this phrase, so we slice the string to get it
                 if "companyname" in h4_text_sub:
                     company_name_sub = h4_text_sub[len("companyname"):]
-                    if latest_job_company == "":
+                    if latest_job_company is "":
                         latest_job_company = h4_text[len("Company Name") + 1:]
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
-            if latest_job_info == "":
+            if latest_job_info is "":
                 latest_job_info = temp_job_info
 
-            # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn and break the loop
-            if job_title_from_sheet == "":
-                job_title_from_sheet = latest_job_title
-                job_company_from_sheet = latest_job_company
+            # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
+            # and break the loop
+            if job_title_from_excel is "":
+                job_title_from_excel = latest_job_title
+                job_company_from_excel = latest_job_company
                 logger.debug('Empty job is currently on record, break loop since new job is found')
-                logger.debug('Current job: ' + job_title_from_sheet)
-                logger.debug('Current company: ' + job_company_from_sheet)
+                logger.debug('Current job: ' + job_title_from_excel)
+                logger.debug('Current company: ' + job_company_from_excel)
                 break
 
             # check if job title matches
             job_title_sub = self.convert_str(job_title)
-            if job_title_sub in job_title_from_sheet or job_title_from_sheet in job_title_sub:
+            if job_title_sub in job_title_from_excel or job_title_from_excel in job_title_sub:
                 logger.debug('Job title match.')
                 local_score += 1
 
             # check if company matches
-            if job_company_from_sheet in company_name_sub or company_name_sub in job_company_from_sheet:
+            if job_company_from_excel in company_name_sub or company_name_sub in job_company_from_excel:
                 logger.debug('Company name match.')
                 local_score += 1
 
@@ -253,28 +314,28 @@ class Crawler(Client):
         logger.debug('=' * 100)
         return local_score
 
-    def verify_degrees(self, row=0):
+    def verify_degrees(self, row):
         """verify education data of this link, i.e., school name, major, grad year"""
         logger.debug('Verifying degrees...')
         local_score = 0
-        education_list = None
         # error checking, for some profile link don't even have education info
         try:
             education_list = WebDriverWait(self.driver, 5).until(
                 #  The reason why choose this xpath is <a> tags with this data-control-name wraps all the data we want
-                EC.presence_of_all_elements_located((By.XPATH,
-                                                     '//a[@data-control-name="background_details_school"]'))
-            )
+                expected_conditions.presence_of_all_elements_located((
+                    By.XPATH, '//a[@data-control-name="background_details_school"]')))
         except TimeoutException:
             logger.debug('No education data found.')
             return local_score
 
         logger.debug(str(len(education_list)) + " education data found\n")
-
+        schools = [row['SCHOOL1'], row['SCHOOL2'], row['SCHOOL3']]
+        majors = [row['MAJOR1'], row['MAJOR2'], row['MAJOR3']]
+        degrees = [row['DEGREE_YEAR1'], row['DEGREE_YEAR2'], row['DEGREE_YEAR3']]
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
-        for col in range(self.school1_index, self.school3_index + 1, 4):
-            if self.read_sheet.cell(row, col).value != "":
+        for school_col, major_col, degree_col in zip(schools, majors, degrees):
+            if school_col is not "":
                 # iterate on all education data in this profile link
                 for education in education_list:
                     # find school name
@@ -282,7 +343,7 @@ class Crawler(Client):
                     school_name = school.text
                     # logger.debug(school_name)
                     # check school
-                    if self.check_school(self.convert_str(school_name)) == 1:
+                    if self.check_school(self.convert_str(school_name)) is True:
                         logger.debug("school match.")
                         local_score += 1
 
@@ -294,13 +355,12 @@ class Crawler(Client):
                         major_text += major_info.text
                     # logger.debug(major_text)
                     # check major and degree
-                    if self.check_degree(self.convert_str(major_text),
-                                         self.convert_str(self.read_sheet.cell(row, col + 1).value)) == 1:
+                    if self.check_degree(self.convert_str(major_text), self.convert_str(school_col)) is True:
                         logger.debug("degree match.")
                         local_score += 1
 
-                    if self.check_major(self.convert_str(self.read_sheet.cell(row, col + 3).value),
-                                        self.convert_str(major_text)) == 1:
+                    if self.check_major(self.convert_str(major_col),
+                                        self.convert_str(major_text)) is True:
                         logger.debug("major match.")
                         local_score += 1
 
@@ -312,8 +372,8 @@ class Crawler(Client):
                     elif len(grad_years) == 1:
                         grad_year = grad_years[0].text
 
-                    # logger.debug("graduation year: " + grad_year)
-                    if self.check_gradyear(str(int(self.read_sheet.cell(row, col + 2).value)), grad_year) == 1:
+                    logger.debug("graduation year: " + grad_year)
+                    if self.check_gradyear(str(int(degree_col)), grad_year) is True:
                         logger.debug("graduation year match.")
                         local_score += 1
         return local_score
@@ -357,26 +417,18 @@ class Crawler(Client):
         """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
         return re.sub("\W", "", input).lower()
 
-    def crawl_utl(self, row=0):
+    def crawl_utl(self, row):
         """crawl utility function for loop"""
         self.start_search()
 
-        logger.debug("Waiting page to render...\n")
-        potential_divs = self.wait_for_search()
+        logger.debug("Waiting page to render...")
+        potential_divs = self.get_search_results()
         logger.debug(str(len(potential_divs)) + " potential candidate entering coarse-grain filter")
         if len(potential_divs) == 0:
             return
-
-        """
-        coarse grain filter
-        """
         potential_link_set = set()
-        self.coarse_filter(potential_divs, potential_link_set)
-
-        """
-        fine grain filter
-        """
-        self.fine_filter(potential_link_set, row)
+        self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
+        self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):
         """main routine for UI invocation"""
@@ -384,22 +436,7 @@ class Crawler(Client):
         if self.driver:
             self.driver.get("https://www.linkedin.com")
             self.login()
-
-            # TODO batch search, output modified write book
-            if (self.file_path != ""):
-                #  construct read book and write book
-                logger.debug("copying write book...\n")
-                self.read_book = open_workbook(self.file_path)
-                self.read_sheet = self.read_book.sheet_by_index(0)
-                self.write_book = copy(self.read_book)
-                self.write_sheet = self.write_book.get_sheet(0)
-                for row in range(self.start_row - 1, self.end_row, 1):
-                    self.first_name = self.read_sheet.cell(row, self.first_name_index).value.lower()
-                    self.last_name = self.read_sheet.cell(row, self.last_name_index).value.lower()
-                    self.crawl_utl(row)
-            else:
-                self.crawl_utl()
-
-            # finally, close the web browser
+            for index, row in self.data.iterrows():
+                self.crawl_utl(row)
             self.driver.close()
             logger.debug("Crawling complete")

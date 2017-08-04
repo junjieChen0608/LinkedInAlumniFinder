@@ -1,6 +1,3 @@
-# GUI file for LinkedIN People Finder App
-# Written by Jared Brown 7/3/17
-
 from tkinter import *
 from tkinter import filedialog as fd
 
@@ -109,7 +106,7 @@ class App:
         if dict_filled and self.file_path != "":
             self.err_message("You cannot do manual search and batch search at the same time.")
         elif not dict_filled and self.file_path != "":
-            c = crawler.Crawler(miDict, self.file_path.name)
+            c = crawler.Crawler(miDict)
             c.crawl_linkedin()
         elif self.file_path == "" and (miDict["firstName"] == "" or miDict["lastName"] == ""):
             self.err_message("First and last name are required for manual search.")

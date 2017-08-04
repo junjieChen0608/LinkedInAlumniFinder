@@ -17,7 +17,7 @@ virtualenv:
 	$(PYTHON_BIN)/pip3 install -r requirements.txt
 
 test:
-	python3 -m pytest tests/
+	python3 -m pytest --capture=no tests/
 	@rm -rf .cache/
 
 docker-image:
