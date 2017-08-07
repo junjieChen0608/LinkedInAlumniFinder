@@ -1,14 +1,18 @@
 # GUI file for LinkedIN People Finder App
 # Written by Jared Brown 7/3/17
 
-import os
 from sys import platform
 from tkinter import *
 from tkinter import filedialog as fd
 
+from alumnifinder.gui import images
+
 validFileTypes = ("*.xlsx", "*.xls")
 miDict = {}
 file = ""
+
+
+# TODO: Implement logger
 
 
 class App:
@@ -21,26 +25,15 @@ class App:
         frame.config(padx=5, pady=5)
 
         try:
-            if platform.startswith("linux") or platform.startswith("darwin"):
-                ublogopath = os.path.abspath("images/ublogo.gif")
-                self.logo = PhotoImage(file=ublogopath)
-            else:
-                self.logo = PhotoImage(file=r'.\images\ublogo.gif')
-            self.logo = self.logo.subsample(5, 5)
-            self.ublogo = Label(frame, image=self.logo)
-            self.ublogo.grid(row=0)
-            master.tk.call('wm', 'iconphoto', master._w, self.logo)  # sets UB logo as icon
-        except:
-            print("file not found")
+            self.logo = PhotoImage(file=images.logo_path)
+            self.errIcon = PhotoImage(file=images.error_icon_path)
+        except FileNotFoundError as e:
+            raise e
 
-        try:
-            if platform.startswith("linux") or platform.startswith("darwin"):
-                errpath = os.path.abspath("images/err.gif")
-                self.errIcon = PhotoImage(file=errpath)
-            else:
-                self.errIcon = PhotoImage(file=r'.\images\err.gif')
-        except:
-            print("file not found")
+        self.logo = self.logo.subsample(5, 5)
+        self.ublogo = Label(frame, image=self.logo)
+        self.ublogo.grid(row=0)
+        master.tk.call('wm', 'iconphoto', master._w, self.logo)  # sets UB logo as icon
 
         self.appTitle = Label(frame, text="UB LinkedIn Alumni People Finder")
         self.appTitle.grid(row=0, column=0, columnspan=3)
@@ -69,7 +62,7 @@ class App:
         self.e3.grid(row=startRow + 2, column=1)
         self.e4.grid(row=startRow + 3, column=1)
 
-        okbtn = Button(frame, text="   OK   ", command=self.ok)
+        okbtn = Button(frame, text="   OK   ", command=self.ok_button)
         okbtn.grid(row=startRow + 6, columnspan=5, pady=5)
         # end manual option fields
 
@@ -79,7 +72,7 @@ class App:
         self.rightFilePathEntry = Entry(frame)
         self.rightFilePathEntry.config(state="readonly", width=35)
         self.rightFilePathEntry.grid(row=startRow, column=2, padx=5)
-        openFileBtn = Button(frame, text="...", command=self.searchFile)
+        openFileBtn = Button(frame, text="...", command=self.search_file)
         openFileBtn.grid(row=startRow, column=3)
 
         self.rightSaveLabel = Label(frame, text="Choose a save location")
@@ -88,22 +81,22 @@ class App:
 
         self.rightSavePathEntry.config(state="readonly", width=35)
         self.rightSavePathEntry.grid(row=startRow + 2, column=2, padx=5)
-        saveFileBtn = Button(frame, text="...", command=self.searchSave)
+        saveFileBtn = Button(frame, text="...", command=self.search_save)
         saveFileBtn.grid(row=startRow + 2, column=3)
 
     # end file input
 
-    def searchSave(self):
-        file = fd.askdirectory(initialdir="/", title="Choose Where to Save")  # returns a string
-        if file is None:
+    def search_save(self):
+        save_location = fd.askdirectory(initialdir="/", title="Choose Where to Save")  # returns a string
+        if save_location is None:
             print("No file selected")
         else:
             self.rightSavePathEntry.config(state=NORMAL)
             self.rightSavePathEntry.delete(0, last=END)
-            self.rightSavePathEntry.insert(0, file)
+            self.rightSavePathEntry.insert(0, save_location)
             self.rightSavePathEntry.config(state="readonly")
 
-    def searchFile(self):
+    def search_file(self):
         file = fd.askopenfile(initialdir="/", title="Select file",  # returns a file
                               filetypes=[("Excel Files", validFileTypes), ("All Files", "*.*")])
         # xlsx
@@ -118,10 +111,10 @@ class App:
                         types += x
                     else:
                         types += x + ", "
-                self.err("File type invalid.\nValid file types are: " + types)
+                self.error_pop_up("File type invalid.\nValid file types are: " + types)
             else:
-                if (self.rightSavePathEntry.get() == ""):
-                    self.setSaveDir(file.name)
+                if self.rightSavePathEntry.get() == "":
+                    self.set_save_dir(file.name)
                 self.rightFilePathEntry.config(state=NORMAL)
                 self.rightSavePathEntry.delete(0, last=END)
                 self.rightFilePathEntry.insert(0, file.name)
@@ -129,7 +122,7 @@ class App:
 
     # method to set the default save dir when a file is chosen. Sets the same
     # dir that the file is in as default
-    def setSaveDir(self, filePath):
+    def set_save_dir(self, filePath):
         if platform.startswith("linux") or platform.startswith("darwin"):
             pathArr = filePath.split('\\')
         else:
@@ -144,11 +137,11 @@ class App:
         self.rightSavePathEntry.insert(0, filePath[:endOfDir])
         self.rightSavePathEntry.config(state="readonly")
 
-    def ok(self):
+    def ok_button(self):
         if self.rightFilePathEntry.get() == '':
-            self.err("Please choose a file to search from.")
+            self.error_pop_up("Please choose a file to search from.")
         elif self.rightSavePathEntry.get() == '':
-            self.err("Please choose a save location.")
+            self.error_pop_up("Please choose a save location.")
         else:
             miDict["geolocation"] = self.e1.get().strip()
             miDict["jobPosition"] = self.e2.get().strip()
@@ -160,7 +153,7 @@ class App:
             print(miDict["geolocation"] + " " + miDict["jobPosition"] + " " + miDict["startRow"] + " " +
                   miDict["endRow"])
 
-    def err(self, text):
+    def error_pop_up(self, text):
         top = Toplevel()
         top.title("Error")
         top.iconphoto(top._w, self.errIcon)
