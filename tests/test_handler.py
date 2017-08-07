@@ -30,4 +30,4 @@ class TestHandler:
     def test_iter(self, xls_file):
         h = Handler(xls_file)
         for index, row in h.data.iterrows():
-            print(row['FIRST_NAME'])
+            print(row)  # for debugging
