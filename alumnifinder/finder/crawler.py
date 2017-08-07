@@ -49,22 +49,12 @@ class Crawler:
         start_region (str): initial start of web search.
     """
 
-    def __init__(self, data=None, degree=None, degree_year=None, first_name=None, last_name=None, major=None,
-                 linkedin_area=None, school_dept=None, work_city=None, work_company=None, work_state=None,
-                 work_title=None):
+    def __init__(self, data, mDict):
         """Initializes Crawler class with optional arguments."""
         self.data = data
-        self.degree = degree
-        self.degree_year = degree_year
-        self.first_name = first_name
-        self.last_name = last_name
-        self.major = major
-        self.linkedin_area = linkedin_area
-        self.school_dept = school_dept
-        self.work_city = work_city
-        self.work_company = work_company
-        self.work_state = work_state
-        self.work_title = work_title
+        self.info_dict = mDict
+        self.first_name = ""
+        self.last_name = ""
 
         self.driver = None
         self.start_region = 'Buffalo'
@@ -312,6 +302,20 @@ class Crawler:
         logger.debug('latest job:' + latest_job_title)
         logger.debug('latest job info:' + latest_job_info)
         logger.debug('=' * 100)
+        local_score += self.verify_jobs_helper(self.convert_str(latest_job_title), self.convert_str(latest_job_info))
+        return local_score
+
+    def verify_jobs_helper(self, job_title: str, job_info: str) -> int:
+        """match search keywords with the latest job"""
+        local_score = 0
+        if self.info_dict["jobPosition"] is not "":
+            target_job = self.convert_str(self.info_dict["jobPosition"])
+            if job_title in target_job:
+                local_score += 1
+        if self.info_dict["geolocation"] is not "":
+            target_location = self.convert_str(self.info_dict["geolocation"])
+            if target_location in job_info:
+                local_score += 1
         return local_score
 
     def verify_degrees(self, row):
@@ -419,6 +423,8 @@ class Crawler:
 
     def crawl_utl(self, row):
         """crawl utility function for loop"""
+        self.first_name = row["FIRST_NAME"]
+        self.last_name = row["LAST_NAME"]
         self.start_search()
 
         logger.debug("Waiting page to render...")

@@ -5,6 +5,7 @@ import os
 from sys import platform
 from tkinter import *
 from tkinter import filedialog as fd
+from alumnifinder.finder import crawler
 
 validFileTypes = ("*.xlsx", "*.xls")
 miDict = {}
@@ -159,6 +160,9 @@ class App:
             # TODO init crawler object and send info to it
             print(miDict["geolocation"] + " " + miDict["jobPosition"] + " " + miDict["startRow"] + " " +
                   miDict["endRow"])
+            c = crawler.Crawler(file, miDict)
+            c.crawl_linkedin()
+
 
     def err(self, text):
         top = Toplevel()
