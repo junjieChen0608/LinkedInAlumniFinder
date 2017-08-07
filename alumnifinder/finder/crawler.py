@@ -256,7 +256,7 @@ class Crawler:
                 raise NoSuchElementException(msg)
 
             # record the top job title as the latest job title
-            if latest_job_title is "":
+            if not latest_job_title:
                 latest_job_title += job_title
 
             # temp job info is used to compose job description
@@ -270,17 +270,17 @@ class Crawler:
                 # the actual company name is after this phrase, so we slice the string to get it
                 if "companyname" in h4_text_sub:
                     company_name_sub = h4_text_sub[len("companyname"):]
-                    if latest_job_company is "":
+                    if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
-            if latest_job_info is "":
+            if not latest_job_info:
                 latest_job_info = temp_job_info
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
-            if job_title_from_excel is "":
+            if not job_title_from_excel:
                 job_title_from_excel = latest_job_title
                 job_company_from_excel = latest_job_company
                 logger.debug('Empty job is currently on record, break loop since new job is found')
@@ -308,11 +308,11 @@ class Crawler:
     def verify_jobs_helper(self, job_title: str, job_info: str) -> int:
         """match search keywords with the latest job"""
         local_score = 0
-        if self.info_dict["jobPosition"] is not "":
+        if self.info_dict["jobPosition"]:
             target_job = self.convert_str(self.info_dict["jobPosition"])
             if job_title in target_job:
                 local_score += 1
-        if self.info_dict["geolocation"] is not "":
+        if self.info_dict["geolocation"]:
             target_location = self.convert_str(self.info_dict["geolocation"])
             if target_location in job_info:
                 local_score += 1
@@ -339,7 +339,7 @@ class Crawler:
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
         for school_col, major_col, degree_col in zip(schools, majors, degrees):
-            if school_col is not "":
+            if school_col:
                 # iterate on all education data in this profile link
                 for education in education_list:
                     # find school name
@@ -347,7 +347,7 @@ class Crawler:
                     school_name = school.text
                     # logger.debug(school_name)
                     # check school
-                    if self.check_school(self.convert_str(school_name)) is True:
+                    if self.check_school(self.convert_str(school_name)):
                         logger.debug("school match.")
                         local_score += 1
 
@@ -359,12 +359,12 @@ class Crawler:
                         major_text += major_info.text
                     # logger.debug(major_text)
                     # check major and degree
-                    if self.check_degree(self.convert_str(major_text), self.convert_str(school_col)) is True:
+                    if self.check_degree(self.convert_str(major_text), self.convert_str(school_col)):
                         logger.debug("degree match.")
                         local_score += 1
 
                     if self.check_major(self.convert_str(major_col),
-                                        self.convert_str(major_text)) is True:
+                                        self.convert_str(major_text)):
                         logger.debug("major match.")
                         local_score += 1
 
@@ -377,7 +377,7 @@ class Crawler:
                         grad_year = grad_years[0].text
 
                     logger.debug("graduation year: " + grad_year)
-                    if self.check_gradyear(str(int(degree_col)), grad_year) is True:
+                    if self.check_gradyear(str(int(degree_col)), grad_year):
                         logger.debug("graduation year match.")
                         local_score += 1
         return local_score
@@ -407,15 +407,15 @@ class Crawler:
             else:
                 return False
         else:
-            return True if compare_to in base_text else False
+            return compare_to in base_text
 
     def check_major(self, base_text, compare_to) -> bool:
         """check major"""
-        return True if base_text in compare_to else False
+        return base_text in compare_to
 
     def check_gradyear(self, base_text, compare_to) -> bool:
         """check graduation year"""
-        return True if base_text == compare_to else False
+        return base_text == compare_to
 
     def convert_str(self, input):
         """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
