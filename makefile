@@ -1,4 +1,4 @@
-.PHONY: build clean docker-imagex run test virtualenv
+.PHONY: build clean docker-image run test virtualenv
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 

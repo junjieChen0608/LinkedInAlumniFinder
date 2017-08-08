@@ -5,8 +5,7 @@ from sys import platform
 
 import pandas as pd
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
@@ -66,7 +65,8 @@ class Crawler:
         Raises:
             OSError: Unsupported operating system found.
         """
-        logger.debug('Setting up web driver...')
+        LOG_PHASE = 'Setup'
+        logger.debug('{}: Setting up web driver...'.format(LOG_PHASE))
 
         if platform.startswith('linux'):
             chrome_path = drivers.LINUX_DRIVER_PATH
@@ -75,10 +75,11 @@ class Crawler:
         elif platform.startswith('win32') or platform.startswith('cygwin'):
             chrome_path = drivers.WIN_DRIVER_PATH
         else:
-            msg = 'Unsupported operating system found.'
+            msg = '{}: Unsupported operating system found.'.format(LOG_PHASE)
             logger.exception(msg)
             raise OSError(msg)
         self.driver = webdriver.Chrome(chrome_path)  # sets member variable.
+        logger.debug('{}: SUCCESS.'.format(LOG_PHASE))
 
     def random_pause(self) -> None:
         """Randomly pauses WebDriver.
@@ -100,34 +101,35 @@ class Crawler:
             EOFError: All credentials in 'config/cred.json' failed to login. This could be due to a scraper account
             being blocked.
         """
-        logger.debug('Attempting login...')
+        LOG_PHASE = 'Login'
+        logger.debug('{}: Attempting to login...'.format(LOG_PHASE))
         for account in jsonreader.get_credentials():
-            logger.debug('Finding web element(s)...')
+            logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
             try:
                 login_email = WebDriverWait(self.driver, 10).until(
                     expected_conditions.presence_of_element_located((By.CLASS_NAME, 'login-email'))
                 )
                 login_password = self.driver.find_element_by_class_name('login-password')
                 sign_in_btn = self.driver.find_element_by_id('login-submit')
+                logger.debug('{}: Inputting login credentials...'.format(LOG_PHASE))
+                login_email.clear()
+                login_email.send_keys(account.get('email'))
+                login_password.clear()
+                login_password.send_keys(account.get('password'))
+                sign_in_btn.click()
             except NoSuchElementException:
-                msg = 'Web element could not be found.'
+                msg = '{}: Web element could not be found.'.format(LOG_PHASE)
                 logger.exception(msg)
                 raise NoSuchElementException(msg)
 
-            logger.debug('Inputting credentials...')
-            login_email.clear()
-            login_email.send_keys(account.get('email'))
-            login_password.clear()
-            login_password.send_keys(account.get('password'))
-            sign_in_btn.click()
-            if self.driver.title == 'LinkedIn':
-                logger.debug('Logged-in.')
-                break  # successful log-in
+            if 'Log In or Sign Up' not in self.driver.title:
+                logger.debug('{}: SUCCESS.'.format(LOG_PHASE))
+                return
             else:
-                logger.debug('Trying to login again...')
+                logger.warning('{}: FAILED.'.format(LOG_PHASE))
                 self.driver.get('https://www.linkedin.com')  # try-again with a different account
 
-        msg = 'Could not login with any credentials.'  # log-in failure
+        msg = '{}: Could not login with any credentials.'.format(LOG_PHASE)  # All credentials failed
         logger.exception(msg)
         raise EOFError(msg)
 
@@ -137,21 +139,22 @@ class Crawler:
         Raises:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
-        logger.debug('Finding web element(s)...')
+        LOG_PHASE = 'Start-Search'
+        logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
         try:
             search_bar = WebDriverWait(self.driver, 10).until(
                 expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="ember-text-field ember-view"]'))
             )
         except NoSuchElementException:
-            msg = 'Web element could not be found.'
+            msg = '{}: Web element could not be found.'.format(LOG_PHASE)
             logger.exception(msg)
             raise NoSuchElementException(msg)
-        logger.debug('Inputting arguments into search bar...')
+        logger.debug('{}: Inputting arguments into search bar...'.format(LOG_PHASE))
         # TODO: Add other arguments to search bar
         search_bar.clear()
         search_bar.send_keys(self.row_first_name + " " + self.row_last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
-        logger.debug('Searching...')
+        logger.debug('{}: Searching...'.format(LOG_PHASE))
 
     def get_search_results(self) -> list:
         """WebDriver waits for search results and grabs web elements.
@@ -162,18 +165,19 @@ class Crawler:
         Raises:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
-        logger.debug('Waiting for search results...')
+        LOG_PHASE = 'Search-Results'
+        logger.debug('{}: Waiting for search results...'.format(LOG_PHASE))
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
                 expected_conditions.presence_of_all_elements_located((
                     By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]')))
             return potential_divs
         except NoSuchElementException:
-            msg = 'Web element could not be found.'
+            msg = '{}: Web element could not be found.'.format(LOG_PHASE)
             logger.exception(msg)
             raise NoSuchElementException(msg)
         except TimeoutException:
-            logger.debug('No match found.')
+            logger.debug('{}: No match found.'.format(LOG_PHASE))
             return []
 
     def coarse_filter(self, potential_divs: list, result_set: set) -> None:
@@ -185,7 +189,10 @@ class Crawler:
             potential_divs (list):
             result_set (set):
         """
-        for div in potential_divs:
+        LOG_PHASE = 'Coarse-Filter'
+        logger.debug('{}: Starting filter...'.format(LOG_PHASE))
+        for div in potential_divs:  # web-element
+            logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
             try:
                 inner_anchor = div.find_element(By.TAG_NAME, "a")
                 profile_link = inner_anchor.get_attribute("href")
@@ -196,26 +203,32 @@ class Crawler:
                 inner_span = inner_anchor.find_element(By.XPATH, "//*[@id=\"" + inner_h3_id + "\"]/span[1]/span")
                 inner_span_text = inner_span.text.lower().replace(" ", "")
             except NoSuchElementException:
-                msg = 'Web element could not be found.'
+                msg = '{}: Web element could not be found.'.format(LOG_PHASE)
                 logger.exception(msg)
                 raise NoSuchElementException(msg)
+            except StaleElementReferenceException:
+                msg = '{}: Web element lost.'.format(LOG_PHASE)
+                logger.exception(msg)
+                raise StaleElementReferenceException(msg)
 
             if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
                 result_set.add(profile_link)
-
-        logger.debug(str(len(result_set)) + ' candidates survived from coarse-grain filter.')
+        log_result = str(len(result_set))
+        logger.debug('{}: \"{}\" candidates survived from coarse-grain filter.'.format(LOG_PHASE, log_result))
 
     def fine_filter(self, potential_link_set: set, row) -> None:
         """fine-grain filter that evaluates accuracy score of all candidate profile links"""
-        logger.debug('Checking ' + str(len(potential_link_set)) + ' candidates profile links...')
+        LOG_PHASE = 'Fine-Filter'
+        log_set_num = str(len(potential_link_set))
+        logger.debug('{}: Checking \"{}\" candidates profile links...'.format(LOG_PHASE, log_set_num))
         logger.debug('=' * 100)
         for link in potential_link_set:
-            logger.debug('Clicked: ' + link)
+            logger.debug('{}: Clicked: {}'.format(LOG_PHASE, link))
             self.driver.get(link)
             score = 0
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
-            logger.debug('Accuracy score:', score)
+            logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
             logger.debug('=' * 100)
 
     def verify_jobs(self, row: pd.Series) -> int:
@@ -418,15 +431,17 @@ class Crawler:
         """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
         return re.sub("\W", "", input).lower()
 
-    def crawl_utl(self, row):
+    def crawl_util(self, row):
         """crawl utility function for loop"""
+        LOG_PHASE = 'Crawl-Util'
         self.row_first_name = row["FIRST_NAME"]
         self.row_last_name = row["LAST_NAME"]
         self.start_search()
 
-        logger.debug("Waiting page to render...")
+        logger.debug("{}: Waiting for page to render...".format(LOG_PHASE))
         potential_divs = self.get_search_results()
-        logger.debug(str(len(potential_divs)) + " potential candidate entering coarse-grain filter")
+        log_div = str(len(potential_divs))
+        logger.debug("{}: \"{}\" potential candidate entering coarse-grain filter".format(LOG_PHASE, log_div))
         if len(potential_divs) == 0:
             return
         potential_link_set = set()
@@ -440,6 +455,6 @@ class Crawler:
             self.driver.get("https://www.linkedin.com")
             self.login()
             for index, row in self.data.iterrows():
-                self.crawl_utl(row)
+                self.crawl_util(row)
             self.driver.close()
             logger.debug("Crawling complete")

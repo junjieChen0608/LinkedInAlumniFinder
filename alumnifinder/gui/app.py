@@ -11,7 +11,6 @@ from alumnifinder.gui import images
 
 validFileTypes = ("*.xlsx", "*.xls")
 miDict = {}
-file = ""
 
 
 # TODO: Implement logger
@@ -106,7 +105,7 @@ class App:
             print("No File Selected")
         else:
             type = file.name.split('.')
-            if (type[1] != "xlsx" and type[1] != "xls"):
+            if type[1] != "xlsx" and type[1] != "xls":
                 types = ""
                 for x in validFileTypes:
                     if x == validFileTypes[-1]:
@@ -150,11 +149,9 @@ class App:
             miDict["startRow"] = self.e3.get().strip()
             miDict["endRow"] = self.e4.get().strip()
             print(miDict)
-
-            # TODO init crawler object and send info to it
             print(miDict["geolocation"] + " " + miDict["jobPosition"] + " " + miDict["startRow"] + " " +
                   miDict["endRow"])
-            excel = Handler(self.rightFilePathEntry)
+            excel = Handler(self.rightFilePathEntry.get())
             c = Crawler(excel.data, **miDict)
             c.crawl_linkedin()
 
