@@ -1,4 +1,4 @@
-.PHONY: clean docker-image build test virtualenv
+.PHONY: build clean docker-imagex run test virtualenv
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 
@@ -13,12 +13,15 @@ clean:
 	@rm -rf build/
 	@rm -rf __pycache__/
 
-virtualenv:
-	$(PYTHON_BIN)/pip3 install -r requirements.txt
+docker-image:
+	docker build -t alumni-finder-machine .
+
+run:
+	python main.py
 
 test:
 	python3 -m pytest --capture=no tests/
 	@rm -rf .cache/
 
-docker-image:
-	docker build -t alumni-finder-machine .
+virtualenv:
+	$(PYTHON_BIN)/pip3 install -r requirements.txt

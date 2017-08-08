@@ -71,3 +71,4 @@ ENV/
 README.md
 Dockerfile
 .gitignore
+docs/
