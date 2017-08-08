@@ -4,6 +4,7 @@ import re
 from sys import platform
 
 import pandas as pd
+import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -86,10 +87,11 @@ class Crawler:
 
         The purpose is to lower the chances of web scraping detection.
         """
+        # TODO fix random pause with time module
         LOG_PHASE = 'Pause'
-        to_pause = random.randint(1, 5)
-        logger.debug('{}: Paused for ' + str(to_pause) + 's'.format(LOG_PHASE))
-        self.driver.implicitly_wait(to_pause)
+        to_pause = random.randint(2, 4)
+        # logger.debug('{}: Paused for '.format(LOG_PHASE) + str(to_pause) + 's')
+        time.sleep(to_pause)
 
     def login(self) -> None:
         """WebDriver finds web elements for login and performs login actions.
@@ -143,7 +145,10 @@ class Crawler:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
         LOG_PHASE = 'Start-Search'
-        logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
+        logger.debug('{}: Finding search bar web element(s)...'.format(LOG_PHASE))
+        # reload the LinkedIn page to start search, this is meant to avoid reuse of previous search result
+        self.driver.get("https://www.linkedin.com")
+        self.random_pause()
         try:
             search_bar = WebDriverWait(self.driver, 10).until(
                 expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="ember-text-field ember-view"]'))
@@ -153,11 +158,10 @@ class Crawler:
             logger.exception(msg)
             raise NoSuchElementException(msg)
         logger.debug('{}: Inputting arguments into search bar...'.format(LOG_PHASE))
-        # TODO: Add other arguments to search bar
         search_bar.clear()
+        logger.debug('{}: Searching ['.format(LOG_PHASE) + self.row_first_name + " " + self.row_last_name + ']')
         search_bar.send_keys(self.row_first_name + " " + self.row_last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
-        logger.debug('{}: Searching [' + self.row_first_name + " " + self.row_last_name + '] ...'.format(LOG_PHASE))
 
     def get_search_results(self) -> list:
         """WebDriver waits for search results and grabs web elements.
@@ -169,16 +173,17 @@ class Crawler:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
         LOG_PHASE = 'Search-Results'
-        logger.debug('{}: Waiting for search results...'.format(LOG_PHASE))
+        logger.debug('{}: Waiting for search results of '.format(LOG_PHASE) +
+                     "[" + self.row_first_name + " " + self.row_last_name + "]")
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
                 expected_conditions.presence_of_all_elements_located((
-                    By.XPATH, '//*[@class="search-result__info pt3 pb4 ph0"]')))
+                    By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]')))
             return potential_divs
         except NoSuchElementException:
             msg = '{}: Web element could not be found.'.format(LOG_PHASE)
             logger.exception(msg)
-            raise NoSuchElementException(msg)
+            return []
         except TimeoutException:
             logger.debug('{}: No match found.'.format(LOG_PHASE))
             return []
@@ -196,6 +201,7 @@ class Crawler:
         logger.debug('{}: Starting filter...'.format(LOG_PHASE))
         for div in potential_divs:  # web-element
             logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
+            inner_span_text = ""
             try:
                 inner_anchor = div.find_element(By.TAG_NAME, "a")
                 profile_link = inner_anchor.get_attribute("href")
@@ -203,8 +209,12 @@ class Crawler:
                 inner_h3 = inner_anchor.find_element(By.TAG_NAME, "h3")
                 inner_h3_id = inner_h3.get_attribute("id")
 
-                inner_span = inner_anchor.find_element(By.XPATH, "//*[@id=\"" + inner_h3_id + "\"]/span[1]/span")
+                inner_span = inner_anchor.find_element(By.XPATH, "//h3[@id=\"" + inner_h3_id + "\"]/span[1]/span")
                 inner_span_text = inner_span.text.lower().replace(" ", "")
+                # logger.debug('{}: \nrow_first_name: {}\nrow_last_name: {}\ninner_span_text: {}'.format(
+                #     LOG_PHASE, self.row_first_name, self.row_last_name, inner_span_text))
+                if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
+                    result_set.add(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(LOG_PHASE)
                 logger.exception(msg)
@@ -213,9 +223,6 @@ class Crawler:
                 msg = '{}: Web element lost.'.format(LOG_PHASE)
                 logger.exception(msg)
                 raise StaleElementReferenceException(msg)
-
-            if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
-                result_set.add(profile_link)
         log_result = str(len(result_set))
         logger.debug('{}: \"{}\" candidates survived from coarse-grain filter.'.format(LOG_PHASE, log_result))
 
@@ -448,15 +455,13 @@ class Crawler:
         self.row_first_name = row["FIRST_NAME"].lower()
         self.row_last_name = row["LAST_NAME"].lower()
         self.start_search()
-
-        logger.debug("{}: Waiting for page to render...".format(LOG_PHASE))
         potential_divs = self.get_search_results()
         log_div = str(len(potential_divs))
         if len(potential_divs) == 0:
-            logger.debug("{}: No match for [" + self.row_first_name + " " + self.row_last_name + "]...".format(LOG_PHASE))
+            logger.debug("{}: No match for [".format(LOG_PHASE) + self.row_first_name + " " + self.row_last_name + "]...")
             return
         potential_link_set = set()
-        logger.debug("{}: \"{}\" potential candidate entering coarse-grain filter".format(LOG_PHASE, log_div))
+        logger.debug("{}: \"{}\" potential div(s) entering coarse-grain filter".format(LOG_PHASE, log_div))
         self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
         if len(potential_link_set) == 0:
             return
