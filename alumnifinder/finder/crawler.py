@@ -154,7 +154,7 @@ class Crawler:
         search_bar.clear()
         search_bar.send_keys(self.row_first_name + " " + self.row_last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
-        logger.debug('{}: Searching...'.format(LOG_PHASE))
+        logger.debug('{}: Searching [' + self.row_first_name + " " + self.row_last_name + '] ...'.format(LOG_PHASE))
 
     def get_search_results(self) -> list:
         """WebDriver waits for search results and grabs web elements.
@@ -170,7 +170,7 @@ class Crawler:
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
                 expected_conditions.presence_of_all_elements_located((
-                    By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]')))
+                    By.XPATH, '//*[@class="search-result__info pt3 pb4 ph0"]')))
             return potential_divs
         except NoSuchElementException:
             msg = '{}: Web element could not be found.'.format(LOG_PHASE)
@@ -251,8 +251,8 @@ class Crawler:
         latest_job_company = ""
         latest_job_info = ""
         # current job information from input spreadsheet
-        job_title_from_excel = row['WORK_TITLE']
-        job_company_from_excel = row['WORK_COMPANY_NAME1']
+        job_title_from_excel = self.convert_str(row['WORK_TITLE']) if row['WORK_TITLE'] else ""
+        job_company_from_excel = self.convert_str(row['WORK_COMPANY_NAME1']) if row['WORK_COMPANY_NAME1'] else ""
 
         # iterate on all job history in this profile link
         for job in job_list:
@@ -266,7 +266,7 @@ class Crawler:
                 raise NoSuchElementException(msg)
 
             # record the top job title as the latest job title
-            if latest_job_title is "":
+            if not latest_job_title:
                 latest_job_title += job_title
 
             # temp job info is used to compose job description
@@ -280,17 +280,17 @@ class Crawler:
                 # the actual company name is after this phrase, so we slice the string to get it
                 if "companyname" in h4_text_sub:
                     company_name_sub = h4_text_sub[len("companyname"):]
-                    if latest_job_company is "":
+                    if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
-            if latest_job_info is "":
+            if not latest_job_info:
                 latest_job_info = temp_job_info
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
-            if job_title_from_excel is "":
+            if not job_title_from_excel:
                 job_title_from_excel = latest_job_title
                 job_company_from_excel = latest_job_company
                 logger.debug('Empty job is currently on record, break loop since new job is found')
@@ -309,9 +309,9 @@ class Crawler:
                 logger.debug('Company name match.')
                 local_score += 1
 
-        logger.debug('latest job:' + latest_job_title)
-        logger.debug('latest job info:' + latest_job_info)
-        logger.debug('=' * 100)
+        logger.debug('latest job: ' + latest_job_title)
+        logger.debug('latest job info: ' + latest_job_info)
+        logger.debug('*' * 100)
         local_score += self.verify_jobs_helper(self.convert_str(latest_job_title), self.convert_str(latest_job_info))
         return local_score
 
@@ -350,7 +350,8 @@ class Crawler:
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
         for school_col, major_col, degree_col, gradyrs_col in zip(schools, majors, degrees, grad_yrs):
-            if school_col:
+            # check current school_col value is a non-empty string, not other type
+            if type(school_col) is str and school_col:
                 # iterate on all education data in this profile link
                 for education in education_list:
                     # find school name
@@ -434,8 +435,8 @@ class Crawler:
     def crawl_util(self, row):
         """crawl utility function for loop"""
         LOG_PHASE = 'Crawl-Util'
-        self.row_first_name = row["FIRST_NAME"]
-        self.row_last_name = row["LAST_NAME"]
+        self.row_first_name = row["FIRST_NAME"].lower()
+        self.row_last_name = row["LAST_NAME"].lower()
         self.start_search()
 
         logger.debug("{}: Waiting for page to render...".format(LOG_PHASE))
