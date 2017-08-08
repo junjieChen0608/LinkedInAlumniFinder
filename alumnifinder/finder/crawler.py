@@ -86,7 +86,10 @@ class Crawler:
 
         The purpose is to lower the chances of web scraping detection.
         """
-        self.driver.implicitly_wait(random.randint(1, 5))
+        LOG_PHASE = 'Pause'
+        to_pause = random.randint(1, 5)
+        logger.debug('{}: Paused for ' + str(to_pause) + 's'.format(LOG_PHASE))
+        self.driver.implicitly_wait(to_pause)
 
     def login(self) -> None:
         """WebDriver finds web elements for login and performs login actions.
@@ -229,7 +232,7 @@ class Crawler:
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
             logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
-            logger.debug('=' * 100)
+            logger.debug('=' * 100 + "\n")
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
@@ -251,8 +254,15 @@ class Crawler:
         latest_job_company = ""
         latest_job_info = ""
         # current job information from input spreadsheet
-        job_title_from_excel = self.convert_str(row['WORK_TITLE']) if row['WORK_TITLE'] else ""
-        job_company_from_excel = self.convert_str(row['WORK_COMPANY_NAME1']) if row['WORK_COMPANY_NAME1'] else ""
+        if type(row['WORK_TITLE']) is str and row['WORK_TITLE']:
+            job_title_from_excel = self.convert_str(row['WORK_TITLE'])
+        else:
+            job_title_from_excel = ""
+
+        if type(row['WORK_COMPANY_NAME1']) is str and row['WORK_COMPANY_NAME1']:
+            job_company_from_excel = self.convert_str(row['WORK_COMPANY_NAME1'])
+        else:
+            job_company_from_excel = ""
 
         # iterate on all job history in this profile link
         for job in job_list:
@@ -442,11 +452,14 @@ class Crawler:
         logger.debug("{}: Waiting for page to render...".format(LOG_PHASE))
         potential_divs = self.get_search_results()
         log_div = str(len(potential_divs))
-        logger.debug("{}: \"{}\" potential candidate entering coarse-grain filter".format(LOG_PHASE, log_div))
         if len(potential_divs) == 0:
+            logger.debug("{}: No match for [" + self.row_first_name + " " + self.row_last_name + "]...".format(LOG_PHASE))
             return
         potential_link_set = set()
+        logger.debug("{}: \"{}\" potential candidate entering coarse-grain filter".format(LOG_PHASE, log_div))
         self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
+        if len(potential_link_set) == 0:
+            return
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):
@@ -457,5 +470,6 @@ class Crawler:
             self.login()
             for index, row in self.data.iterrows():
                 self.crawl_util(row)
+                self.random_pause()
             self.driver.close()
             logger.debug("Crawling complete")
