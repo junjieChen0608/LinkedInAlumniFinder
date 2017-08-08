@@ -315,7 +315,7 @@ class Crawler:
                 local_score += 1
         return local_score
 
-    def verify_degrees(self, row):
+    def verify_degrees(self, row: pd.Series) -> int:
         """verify education data of this link, i.e., school name, major, grad year"""
         logger.debug('Verifying degrees...')
         local_score = 0
@@ -332,11 +332,12 @@ class Crawler:
         logger.debug(str(len(education_list)) + " education data found\n")
         schools = [row['SCHOOL1'], row['SCHOOL2'], row['SCHOOL3']]
         majors = [row['MAJOR1'], row['MAJOR2'], row['MAJOR3']]
-        degrees = [row['DEGREE_YEAR1'], row['DEGREE_YEAR2'], row['DEGREE_YEAR3']]
+        degrees = [row['DEGREE_CODE1'], row['DEGREE_CODE2'], row['DEGREE_CODE3']]
+        grad_yrs = [row['DEGREE_YEAR1'], row['DEGREE_YEAR2'], row['DEGREE_YEAR3']]
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
-        for school_col, major_col, degree_col in zip(schools, majors, degrees):
-            if school_col is not "":
+        for school_col, major_col, degree_col, gradyrs_col in zip(schools, majors, degrees, grad_yrs):
+            if school_col:
                 # iterate on all education data in this profile link
                 for education in education_list:
                     # find school name
@@ -344,7 +345,7 @@ class Crawler:
                     school_name = school.text
                     # logger.debug(school_name)
                     # check school
-                    if self.check_school(self.convert_str(school_name)) is True:
+                    if self.check_school(self.convert_str(school_name)):
                         logger.debug("school match.")
                         local_score += 1
 
@@ -356,12 +357,11 @@ class Crawler:
                         major_text += major_info.text
                     # logger.debug(major_text)
                     # check major and degree
-                    if self.check_degree(self.convert_str(major_text), self.convert_str(school_col)) is True:
+                    if self.check_degree(self.convert_str(major_text), self.convert_str(degree_col)):
                         logger.debug("degree match.")
                         local_score += 1
 
-                    if self.check_major(self.convert_str(major_col),
-                                        self.convert_str(major_text)) is True:
+                    if self.check_major(self.convert_str(major_text), self.convert_str(major_col)):
                         logger.debug("major match.")
                         local_score += 1
 
@@ -374,12 +374,12 @@ class Crawler:
                         grad_year = grad_years[0].text
 
                     logger.debug("graduation year: " + grad_year)
-                    if self.check_gradyear(str(int(degree_col)), grad_year) is True:
+                    if self.check_gradyear(grad_year, str(int(gradyrs_col))):
                         logger.debug("graduation year match.")
                         local_score += 1
         return local_score
 
-    def check_school(self, input) -> bool:
+    def check_school(self, input: str) -> bool:
         """Check school name with all possible synonyms"""
         # TODO: add more possible synonyms
         if "universityatbuffalo" in input or "stateuniversityofnewyorkatbuffalo" in input:
@@ -387,34 +387,34 @@ class Crawler:
         else:
             return False
 
-    def check_degree(self, base_text, compare_to) -> bool:
+    def check_degree(self, text_from_web: str, text_from_sheet: str) -> bool:
         """check if degree matches"""
-        if ("bachelor" in base_text or "master" in base_text) and "science" in base_text:
-            if "bs" in compare_to:
+        if ("bachelor" in text_from_web or "master" in text_from_web) and "science" in text_from_web:
+            if "bs" in text_from_sheet:
                 return True
-            elif "ms" in compare_to:
+            elif "ms" in text_from_sheet:
                 return True
             else:
                 return False
-        elif ("bachelor" in base_text or "master" in base_text) and "art" in base_text:
-            if "ba" in compare_to:
+        elif ("bachelor" in text_from_web or "master" in text_from_web) and "art" in text_from_web:
+            if "ba" in text_from_sheet:
                 return True
-            elif "ma" in compare_to:
+            elif "ma" in text_from_sheet:
                 return True
             else:
                 return False
         else:
-            return True if compare_to in base_text else False
+            return text_from_sheet in text_from_web
 
-    def check_major(self, base_text, compare_to) -> bool:
+    def check_major(self, text_from_web: str, text_from_sheet: str) -> bool:
         """check major"""
-        return True if base_text in compare_to else False
+        return text_from_sheet in text_from_web
 
-    def check_gradyear(self, base_text, compare_to) -> bool:
+    def check_gradyear(self, text_from_web: str, text_from_sheet: str) -> bool:
         """check graduation year"""
-        return True if base_text == compare_to else False
+        return text_from_web == text_from_sheet
 
-    def convert_str(self, input):
+    def convert_str(self, input: str) -> str:
         """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
         return re.sub("\W", "", input).lower()
 
