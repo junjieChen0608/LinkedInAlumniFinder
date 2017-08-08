@@ -31,33 +31,30 @@ class Crawler:
     """Searches LinkedIn for updates on alumni.
 
     Args:
-        data (panda's DataFrame): data from excel file.
-        degree (str): type of degree.
-        degree_year (int): year degree earned.
-        first_name (str): first name.
-        last_name (str): last name.
-        major (str): major of degree.
-        linkedin_area (str): alumni's LinkedIn area.
-        school_dept (str): department of major.
-        work_city (str): city where alumni works.
-        work_company (str): company alumni works for.
-        work_state (str): state alumni works in.
-        work_title (str): alumni's work title.
+        data (panda's DataFrame): dataframe object from Handler.
+        kwargs (dict): dictionary of arguments that are passed in from the gui.
+        - geolocation (str):
+        - job_position (str): current alumni job position.
 
     Attributes:
         driver (Selenium WebDriver): used for web scraping.
-        start_region (str): initial start of web search.
+        start_region (str): initial region for the start of the web search.
+        row_first_name (str): first name of an alumni found in a particulate row
+        row_last_name (str): last name of an alumni found in a particulate row
     """
 
-    def __init__(self, data, mDict):
+    def __init__(self, data: pd.DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
         self.data = data
-        self.info_dict = mDict
-        self.first_name = ""
-        self.last_name = ""
+        if 'geolocation' in kwargs:
+            self.geolocation = kwargs['geolocation']
+        if 'jobPosition' in kwargs:
+            self.job_position = kwargs['jobPosition']
 
         self.driver = None
         self.start_region = 'Buffalo'
+        self.row_first_name = ""
+        self.row_last_name = ""
 
     def setup_driver(self) -> None:
         """Locates path of WebDriver Chrome executable and sets it to the driver.
@@ -152,7 +149,7 @@ class Crawler:
         logger.debug('Inputting arguments into search bar...')
         # TODO: Add other arguments to search bar
         search_bar.clear()
-        search_bar.send_keys(self.first_name + " " + self.last_name + " " + self.start_region)
+        search_bar.send_keys(self.row_first_name + " " + self.row_last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
         logger.debug('Searching...')
 
@@ -203,7 +200,7 @@ class Crawler:
                 logger.exception(msg)
                 raise NoSuchElementException(msg)
 
-            if self.first_name in inner_span_text and self.last_name in inner_span_text:
+            if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
                 result_set.add(profile_link)
 
         logger.debug(str(len(result_set)) + ' candidates survived from coarse-grain filter.')
@@ -308,12 +305,12 @@ class Crawler:
     def verify_jobs_helper(self, job_title: str, job_info: str) -> int:
         """match search keywords with the latest job"""
         local_score = 0
-        if self.info_dict["jobPosition"] is not "":
-            target_job = self.convert_str(self.info_dict["jobPosition"])
+        if self.job_position:
+            target_job = self.convert_str(self.job_position)
             if job_title in target_job:
                 local_score += 1
-        if self.info_dict["geolocation"] is not "":
-            target_location = self.convert_str(self.info_dict["geolocation"])
+        if self.geolocation:
+            target_location = self.convert_str(self.geolocation)
             if target_location in job_info:
                 local_score += 1
         return local_score
@@ -423,8 +420,8 @@ class Crawler:
 
     def crawl_utl(self, row):
         """crawl utility function for loop"""
-        self.first_name = row["FIRST_NAME"]
-        self.last_name = row["LAST_NAME"]
+        self.row_first_name = row["FIRST_NAME"]
+        self.row_last_name = row["LAST_NAME"]
         self.start_search()
 
         logger.debug("Waiting page to render...")
