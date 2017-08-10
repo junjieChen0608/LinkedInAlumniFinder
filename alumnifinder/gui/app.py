@@ -5,12 +5,9 @@ from sys import platform
 from tkinter import *
 from tkinter import filedialog as fd
 
-from alumnifinder.excel.handler import Handler
-from alumnifinder.finder.crawler import Crawler
 from alumnifinder.gui import images
 
 validFileTypes = ("*.xlsx", "*.xls")
-miDict = {}
 
 
 # TODO: Implement logger
@@ -24,6 +21,7 @@ class App:
         frame = Frame(master)
         frame.pack()
         frame.config(padx=5, pady=5)
+        self.client_entry = {}
 
         try:
             self.logo = PhotoImage(file=images.logo_path)
@@ -138,45 +136,6 @@ class App:
         self.rightSavePathEntry.insert(0, filePath[:endOfDir])
         self.rightSavePathEntry.config(state="readonly")
 
-    def ok_button(self):
-        if self.rightFilePathEntry.get() == '':
-            self.error_pop_up("Please choose a file to search from.")
-        elif self.rightSavePathEntry.get() == '':
-            self.error_pop_up("Please choose a save location.")
-        else:
-            miDict["geolocation"] = self.e1.get().strip()
-            miDict["jobPosition"] = self.e2.get().strip()
-            miDict["startRow"] = self.e3.get().strip()
-            miDict["endRow"] = self.e4.get().strip()
-            print(miDict)
-            # search range error checking
-            if self.check_search_range(miDict):
-                start_row_int = int(miDict["startRow"]) if miDict["startRow"] else None
-                end_row_int = int(miDict["endRow"]) if miDict["endRow"] else None
-                excel = Handler(self.rightFilePathEntry.get(), start_row_int, end_row_int)
-                # TODO split the divided data frame to multiple crawlers
-                c = Crawler(excel.divided_data_frame, **miDict)
-                c.crawl_linkedin()
-            else:
-                return
-
-    def check_search_range(self, miDict: dict) -> bool:
-        start = miDict["startRow"]
-        end = miDict["endRow"]
-        if not start and not end:
-            return True
-        elif not start or not end:
-            self.error_pop_up("Please specify both start and end row if you want to search in a range")
-            return False
-        elif int(start) < 0 or int(start) > int(end):
-            self.error_pop_up("Please make sure start row < end row, and both should be non-negative")
-            return False
-        elif int(start) >= 0 and int(start) < 2:
-            self.error_pop_up("The first effective row in the spread sheet is starting from 2nd row")
-            return False
-        else:
-            return True
-
     def error_pop_up(self, text):
         top = Toplevel()
         top.title("Error")
@@ -203,3 +162,45 @@ class App:
         top.grab_set()
         self.master.wait_window(top)
         top.grab_release()
+
+    def check_path_save(self):
+        """Checks file and save path"""
+        if self.rightFilePathEntry.get() == '':
+            self.error_pop_up("Please choose a file to search from.")
+        elif self.rightSavePathEntry.get() == '':
+            self.error_pop_up("Please choose a save location.")
+        else:
+            self.client_entry['geolocation'] = self.e1.get().strip()
+            self.client_entry['jobPosition'] = self.e2.get().strip()
+
+    def check_start_end(self):
+        """Checks start and end rows"""
+        if self.e3.get().strip() != '' and self.e4.get().strip() == '':
+            self.error_pop_up("Please enter an end row.")
+        elif self.e3.get().strip() == '' and self.e4.get().strip() != '':
+            self.error_pop_up("Please enter a start row.")
+        elif self.e3.get().strip() != '' and self.e4.get().strip() != '':
+            try:
+                self.client_entry['startRow'] = int(self.e3.get().strip())
+                self.client_entry['endRow'] = int(self.e4.get().strip())
+            except ValueError:
+                self.error_pop_up("Please enter a valid integer.")
+
+            # TODO: add more error catching
+            if self.client_entry['startRow'] < 0:
+                self.error_pop_up("Start row cannot be negative.")
+            elif self.client_entry['startRow'] >= 0 and self.client_entry['startRow'] < 2:
+                self.error_pop_up("Excel file contains headers, start row cannot be less than 2.")
+            elif self.client_entry['endRow'] < 0:
+                self.error_pop_up("End row cannot be negative.")
+            elif self.client_entry['startRow'] > self.client_entry['endRow']:
+                self.error_pop_up("Start row cannot be larger than the end row.")
+            elif self.client_entry['endRow'] < self.client_entry['startRow']:
+                self.error_pop_up("End row cannot be smaller than the start row.")
+        else:
+            pass  # start and end rows not being used
+
+    def ok_button(self):
+        self.check_path_save()
+        self.check_start_end()
+        # TODO: finish the rest.

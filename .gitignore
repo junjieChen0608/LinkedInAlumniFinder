@@ -69,3 +69,7 @@ ENV/
 
 # Pycharm Files
 .idea/
+
+# Project files
+*.xls
+*.xlsx

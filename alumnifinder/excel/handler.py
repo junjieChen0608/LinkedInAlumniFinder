@@ -20,16 +20,18 @@ class Handler:
         indexes (dict): holds the indexes of the headers based on the value.
     """
 
-    def __init__(self, excel_file: str, start: int, end: int):
+    def __init__(self, excel_file: str, **kwargs):
         self.original_data_frame = self.read_excel(excel_file)
+        self.headers = self.get_headers()
         self.original_frame_size = len(self.original_data_frame)
-        self.start_row, self.end_row = self.parse_search_range(start, end)
+        if 'start' in kwargs and 'end' in kwargs:
+            self.start_row, self.end_row = self.parse_search_range(kwargs['start'], kwargs['end'])
+        elif ('start' in kwargs and 'end' not in kwargs) or ('start' not in kwargs and 'end' in kwargs):
+            raise ValueError('Not enough start/end arguments.')
         # the divided data frame is the actual portion that user try to search
         # docker workers can spilt it and distribute them to crawlers
         self.divided_data_frame = self.original_data_frame.iloc[self.start_row:self.end_row]
         self.divided_frame_size = len(self.divided_data_frame)
-        self.headers = self.get_headers()
-        self.indexes = self.find_indexes()
 
     def read_excel(self, excel_file: str) -> pd.DataFrame:
         """Determines which engine to use based on type of excel file.
@@ -68,31 +70,6 @@ class Handler:
             elif type(col) is not str:
                 raise ValueError("File must contain headers.")
         return list(self.original_data_frame.columns.values)
-
-    def find_indexes(self) -> dict:
-        """Gets the indexes of the columns that we are interested in.
-
-        Returns:
-            dict of the values with the updated indexes.
-        """
-        # TODO: make more dynamic (if possible)
-        # TODO: Determine if this method is still necessary.
-        col_targets = dict()
-        if self.headers is not None:
-            for index, col_name in enumerate(self.headers):
-                if col_name == 'FIRST_NAME':
-                    col_targets[col_name] = index
-                elif col_name == 'LAST_NAME':
-                    col_targets[col_name] = index
-                elif col_name == 'WORK_TITLE':
-                    col_targets[col_name] = index
-                elif col_name == 'WORK_COMPANY_NAME1':
-                    col_targets[col_name] = index
-                elif col_name == 'SCHOOL1':
-                    col_targets[col_name] = index
-                elif col_name == 'SCHOOL3':
-                    col_targets[col_name] = index
-        return col_targets
 
     def find_divisor(self) -> int:
         """Finds the highest divisor that can divide our data equally.
