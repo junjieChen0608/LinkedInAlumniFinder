@@ -43,9 +43,11 @@ class Crawler:
         row_last_name (str): last name of an alumni found in a particulate row
     """
 
-    def __init__(self, input_data: pd.DataFrame, **kwargs: dict):
+    def __init__(self, input_data: pd.DataFrame, output_data: pd.DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
         self.input_data = input_data
+        self.output_data = output_data
+        self.row_index = 0
         self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
         self.job_position = kwargs['jobPosition'] if 'jobPosition' in kwargs else ""
         self.driver = None
@@ -199,6 +201,7 @@ class Crawler:
         for div in potential_divs:  # web-element
             logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
             inner_span_text = ""
+            local_row_index = self.row_index
             try:
                 inner_anchor = div.find_element(By.TAG_NAME, "a")
                 profile_link = inner_anchor.get_attribute("href")
@@ -211,9 +214,13 @@ class Crawler:
                 # logger.debug('{}: \nrow_first_name: {}\nrow_last_name: {}\ninner_span_text: {}'.format(
                 #     LOG_PHASE, self.row_first_name, self.row_last_name, inner_span_text))
                 if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
-                    # TODO 1, mark full name on this profile link to output's FULL_NAME_ON_LINK column
+                    # TODO 1, mark full name on this profile link to output's FULL_NAME_ON_LINKEDIN column
+                    self.output_data.at[local_row_index, "FULL_NAME_ON_LINKEDIN"] = inner_span.text
                     # TODO 2, mark this profile link to output's PROFILE_LINK column
+                    self.output_data.at[local_row_index,"PROFILE_LINK"] = profile_link
                     # TODO 3, increment the row index(local)
+                    local_row_index+=1
+
                     result_set.add(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(LOG_PHASE)
@@ -239,9 +246,11 @@ class Crawler:
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
             # TODO 8, for each iteration mark accuracy score to output's ACCURACY_SCORE column
+            self.output_data.at[self.row_index,'ACCURACY_SCORE'] = score
             logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
             logger.debug('=' * 100 + "\n")
             # TODO 9, increment row index(global)
+            self.row_index+=1
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
@@ -288,6 +297,7 @@ class Crawler:
             if not latest_job_title:
                 latest_job_title += job_title
                 #TODO 5, mark latest job title to output's JOB_TITLE column
+                self.output_data.at[self.row_index,'JOB_TITLE'] = latest_job_title
 
             # temp job info is used to compose job description
             temp_job_info = ""
@@ -303,12 +313,16 @@ class Crawler:
                     if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
                         #TODO 6, mark latest company to output's COMPANY_NAME column
+                        self.output_data.at[self.row_index,'COMPANY_NAME'] = latest_job_company
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
+                latest_job_info = re.sub('\s','',latest_job_info)
+                off_set = latest_job_info.find('Location')+len('Location')
                 #TODO 7, mark work location to output's COMPANY_LOCATION column
+                self.output_data.at[self.row_index,'COMPANY_LOCATION'] = latest_job_info[off_set:]
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
@@ -470,6 +484,8 @@ class Crawler:
         if len(potential_link_set) == 0:
             return
         # TODO 4, mark current search key words to the output's FIRST_NAME, LAST_NAME column
+        self.output_data.at[self.row_index,"FIRST_NAME"] = row['FIRST_NAME']
+        self.output_data.at[self.row_index, "LAST_NAME"] = row['LAST_NAME']
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):
