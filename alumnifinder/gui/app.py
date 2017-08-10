@@ -122,10 +122,10 @@ class App:
     # method to set the default save dir when a file is chosen. Sets the same
     # dir that the file is in as default
     def set_save_dir(self, filePath):
-        if platform.startswith("linux"):
-            pathArr = filePath.split('\\')
-        else:
-            pathArr = filePath.split('/')
+        # if platform.startswith("linux"):
+        #     pathArr = filePath.split('\\')
+        # else:
+        pathArr = filePath.split('/')
 
         # this cuts off the file name held at last index of pathAr.
         # the ' - 1' cuts off the last slash from dir name
@@ -135,12 +135,6 @@ class App:
         self.rightSavePathEntry.delete(0, last=END)
         self.rightSavePathEntry.insert(0, filePath[:endOfDir])
         self.rightSavePathEntry.config(state="readonly")
-
-    def get_output_frame(self) -> pd.DataFrame:
-        columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITILE', 'COMPANY_NAME',
-                   'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
-        output_frame = pd.DataFrame(data = '',index=[0],columns=columns)
-        return output_frame
 
     def ok_button(self):
         if self.rightFilePathEntry.get() == '':
@@ -166,18 +160,33 @@ class App:
                 c.crawl_linkedin()
                 # TODO save the output excel file to designated path
                 self.save_file(output_frame)
-
             else:
                 return
 
-    def save_file(self,output_frame:pd.DataFrame) -> None:
+    def get_output_frame(self) -> pd.DataFrame:
+        """generate a pandas DataFrame to write search result
+
+        Returns:
+            pandas DataFrame
+        """
+        columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                   'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+        output_frame = pd.DataFrame(data = '',index=[0],columns=columns)
+        return output_frame
+
+    def save_file(self, output_frame: pd.DataFrame) -> None:
+        """Format the DataFrame and save it as Excel file
+
+         Args:
+             output_frame(pandas DataFrame): the instance of DataFrame that used by the crawler
+        """
         writer = pd.ExcelWriter(self.rightSavePathEntry.get()+'/output.xlsx', engine='xlsxwriter')
         output_frame.to_excel(writer, index=False, sheet_name='Sheet1')
         workbook = writer.book
         workbook.set_size(2800, 1200)
         worksheet = writer.sheets['Sheet1']
         worksheet.set_zoom(110)
-        worksheet.set_column('A:G', 25)
+        worksheet.set_column('A:H', 25)
         writer.save()
 
     def check_search_range(self, miDict: dict) -> bool:

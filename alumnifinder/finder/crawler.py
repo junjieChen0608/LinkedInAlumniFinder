@@ -31,7 +31,8 @@ class Crawler:
     """Searches LinkedIn for updates on alumni.
 
     Args:
-        data (panda's DataFrame): dataframe object from Handler.
+        input_data (panda's DataFrame): DataFrame object from Handler.
+        output_data(panda's DataFrame): output DataFrame object
         kwargs (dict): dictionary of arguments that are passed in from the gui.
         - geolocation (str): target region
         - job_position (str): current alumni job position.
@@ -41,6 +42,7 @@ class Crawler:
         start_region (str): initial region for the start of the web search.
         row_first_name (str): first name of an alumni found in a particulate row
         row_last_name (str): last name of an alumni found in a particulate row
+        row_index(int): row index that indicates which row is currently being modified
     """
 
     def __init__(self, input_data: pd.DataFrame, output_data: pd.DataFrame, **kwargs: dict):
@@ -198,10 +200,9 @@ class Crawler:
         """
         LOG_PHASE = 'Coarse-Filter'
         logger.debug('{}: Starting filter...'.format(LOG_PHASE))
+        local_row_index = self.row_index
         for div in potential_divs:  # web-element
             logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
-            inner_span_text = ""
-            local_row_index = self.row_index
             try:
                 inner_anchor = div.find_element(By.TAG_NAME, "a")
                 profile_link = inner_anchor.get_attribute("href")
@@ -220,7 +221,6 @@ class Crawler:
                     self.output_data.at[local_row_index,"PROFILE_LINK"] = profile_link
                     # TODO 3, increment the row index(local)
                     local_row_index+=1
-
                     result_set.add(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(LOG_PHASE)
@@ -319,10 +319,9 @@ class Crawler:
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
-                latest_job_info = re.sub('\s','',latest_job_info)
-                off_set = latest_job_info.find('Location')+len('Location')
+                off_set = latest_job_info.find('Location') + len('Location') + 1
                 #TODO 7, mark work location to output's COMPANY_LOCATION column
-                self.output_data.at[self.row_index,'COMPANY_LOCATION'] = latest_job_info[off_set:]
+                self.output_data.at[self.row_index,'COMPANY_LOCATION'] = latest_job_info[off_set:].replace("\n", "")
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
