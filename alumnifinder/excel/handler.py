@@ -6,16 +6,21 @@ class Handler:
     """Used to process the Excel file data.
 
     Attributes:
-        data (pandas DataFrame): DataFrame representation of the Excel file.
-        size (int): number of rows in the DataFrame.
+        original_data_frame (pandas DataFrame): DataFrame representation of the Excel file.
+        divided_frame_size (int): number of rows in the DataFrame.
         headers (list of str): all of the headers that exist in the DataFrame
         indexes (dict): holds the indexes of the headers based on the value.
 
     """
 
-    def __init__(self, excel_file):
-        self.data = self.read_excel(excel_file)
-        self.size = len(self.data)
+    def __init__(self, excel_file, start: int, end: int):
+        self.original_data_frame = self.read_excel(excel_file)
+        self.original_frame_size = len(self.original_data_frame)
+        self.start_row, self.end_row = self.parse_search_range(start, end)
+        # the divided data frame is the actual portion that user try to search
+        # docker workers can spilt it and distribute them to crawlers
+        self.divided_data_frame = self.original_data_frame.iloc[self.start_row:self.end_row]
+        self.divided_frame_size = len(self.divided_data_frame)
         self.headers = self.get_headers()
         self.indexes = self.find_indexes()
 
@@ -50,12 +55,12 @@ class Handler:
         Raises:
             ValueError: If file doesn't contain headers, there's no way to interpret the data.
         """
-        for col in list(self.data.columns.values):
+        for col in list(self.original_data_frame.columns.values):
             if type(col) is int:
                 raise ValueError("File must contain headers, not numerical values.")
             elif type(col) is not str:
                 raise ValueError("File must contain headers.")
-        return list(self.data.columns.values)
+        return list(self.original_data_frame.columns.values)
 
     def find_indexes(self) -> dict:
         """Gets the indexes of the columns that we are interested in.
@@ -88,16 +93,16 @@ class Handler:
         Returns:
             (int) highest divisor that can divide our data equally.
         """
-        if self.size < 2:
+        if self.divided_frame_size < 2:
             return 1
         else:
             # TODO: find maximum amount of drivers our machine can handle
             max_drivers = 20  # amount of drivers we can run on our machine.
             highest = 2
-            lowest = len(self.data)
-            for i in range(2, self.size):
-                if (self.size % i) <= lowest:
-                    lowest = self.size % i
+            lowest = len(self.original_data_frame)
+            for i in range(2, self.divided_frame_size):
+                if (self.divided_frame_size % i) <= lowest:
+                    lowest = self.divided_frame_size % i
                     if highest < i < max_drivers:
                         highest = i
             return highest
@@ -109,10 +114,27 @@ class Handler:
         some number.
 
         Args:
-         num (int): number to divide all of the data by.
+            num (int): number to divide all of the data by.
 
         Returns:
             list of DataFrames, each of these DataFrames hold the values of the headers. This is used for indexing the
             rows by their column name, they are NOT part of the actual DataFrame object.
         """
-        return np.array_split(self.data, num)
+        return np.array_split(self.divided_data_frame, num)
+
+    def parse_search_range(self, start: int, end: int) -> (int, int):
+        """Parse input search range to 0-based index for the handler to divide
+
+        Args:
+            start(int): start row number
+            end(int): end row number
+
+        Returns:
+            A tuple of 0-based start and end index
+        """
+        if not start or not end:
+            return (0, self.original_frame_size)
+        elif end > self.original_frame_size:
+            return (start-2, self.original_frame_size)
+        else:
+            return (start-2, end-1)

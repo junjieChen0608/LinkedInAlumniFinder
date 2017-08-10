@@ -149,11 +149,33 @@ class App:
             miDict["startRow"] = self.e3.get().strip()
             miDict["endRow"] = self.e4.get().strip()
             print(miDict)
-            print(miDict["geolocation"] + " " + miDict["jobPosition"] + " " + miDict["startRow"] + " " +
-                  miDict["endRow"])
-            excel = Handler(self.rightFilePathEntry.get())
-            c = Crawler(excel.data, **miDict)
-            c.crawl_linkedin()
+            # search range error checking
+            if self.check_search_range(miDict):
+                start_row_int = int(miDict["startRow"]) if miDict["startRow"] else None
+                end_row_int = int(miDict["endRow"]) if miDict["endRow"] else None
+                excel = Handler(self.rightFilePathEntry.get(), start_row_int, end_row_int)
+                # TODO split the divided data frame to multiple crawlers
+                c = Crawler(excel.divided_data_frame, **miDict)
+                c.crawl_linkedin()
+            else:
+                return
+
+    def check_search_range(self, miDict: dict) -> bool:
+        start = miDict["startRow"]
+        end = miDict["endRow"]
+        if not start and not end:
+            return True
+        elif not start or not end:
+            self.error_pop_up("Please specify both start and end row if you want to search in a range")
+            return False
+        elif int(start) < 0 or int(start) >= int(end):
+            self.error_pop_up("Please make sure start row < end row, and both should be non-negative")
+            return False
+        elif int(start) > 0 and int(start) < 2:
+            self.error_pop_up("The first effective row in the spread sheet is starting from 2nd row")
+            return False
+        else:
+            return True
 
     def error_pop_up(self, text):
         top = Toplevel()

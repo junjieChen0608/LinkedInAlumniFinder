@@ -146,7 +146,8 @@ class Crawler:
         """
         LOG_PHASE = 'Start-Search'
         logger.debug('{}: Finding search bar web element(s)...'.format(LOG_PHASE))
-        # reload the LinkedIn page to start search, this is meant to avoid reuse of previous search result
+
+        # reload the LinkedIn home page to start search, this is meant to avoid reuse of previous search result
         self.driver.get("https://www.linkedin.com")
         self.random_pause()
         try:
