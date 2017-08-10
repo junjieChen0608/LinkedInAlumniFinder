@@ -33,7 +33,7 @@ class Crawler:
     Args:
         data (panda's DataFrame): dataframe object from Handler.
         kwargs (dict): dictionary of arguments that are passed in from the gui.
-        - geolocation (str):
+        - geolocation (str): target region
         - job_position (str): current alumni job position.
 
     Attributes:
@@ -46,11 +46,8 @@ class Crawler:
     def __init__(self, data: pd.DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
         self.data = data
-        if 'geolocation' in kwargs:
-            self.geolocation = kwargs['geolocation']
-        if 'jobPosition' in kwargs:
-            self.job_position = kwargs['jobPosition']
-
+        self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
+        self.job_position = kwargs['jobPosition'] if 'jobPosition' in kwargs else ""
         self.driver = None
         self.start_region = 'Buffalo'
         self.row_first_name = ""
