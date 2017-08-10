@@ -168,10 +168,10 @@ class App:
         elif not start or not end:
             self.error_pop_up("Please specify both start and end row if you want to search in a range")
             return False
-        elif int(start) < 0 or int(start) >= int(end):
+        elif int(start) < 0 or int(start) > int(end):
             self.error_pop_up("Please make sure start row < end row, and both should be non-negative")
             return False
-        elif int(start) > 0 and int(start) < 2:
+        elif int(start) >= 0 and int(start) < 2:
             self.error_pop_up("The first effective row in the spread sheet is starting from 2nd row")
             return False
         else:
