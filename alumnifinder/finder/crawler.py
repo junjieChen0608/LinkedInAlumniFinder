@@ -43,9 +43,9 @@ class Crawler:
         row_last_name (str): last name of an alumni found in a particulate row
     """
 
-    def __init__(self, data: pd.DataFrame, **kwargs: dict):
+    def __init__(self, input_data: pd.DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
-        self.data = data
+        self.input_data = input_data
         self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
         self.job_position = kwargs['jobPosition'] if 'jobPosition' in kwargs else ""
         self.driver = None
@@ -211,8 +211,9 @@ class Crawler:
                 # logger.debug('{}: \nrow_first_name: {}\nrow_last_name: {}\ninner_span_text: {}'.format(
                 #     LOG_PHASE, self.row_first_name, self.row_last_name, inner_span_text))
                 if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
-                    # TODO mark full name on this profile link to output's FULL_NAME_ON_LINK column
-                    # TODO mark this profile link to output's PROFILE_LINK column
+                    # TODO 1, mark full name on this profile link to output's FULL_NAME_ON_LINK column
+                    # TODO 2, mark this profile link to output's PROFILE_LINK column
+                    # TODO 3, increment the row index(local)
                     result_set.add(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(LOG_PHASE)
@@ -237,10 +238,10 @@ class Crawler:
             score = 0
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
-            # TODO for each iteration mark accuracy score to output's ACCURACY_SCORE column
+            # TODO 8, for each iteration mark accuracy score to output's ACCURACY_SCORE column
             logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
             logger.debug('=' * 100 + "\n")
-        # TODO start a new row here in the output excel file
+            # TODO 9, increment row index(global)
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
@@ -286,7 +287,7 @@ class Crawler:
             # record the top job title as the latest job title
             if not latest_job_title:
                 latest_job_title += job_title
-                #TODO mark latest job title to output's JOB_TITLE column
+                #TODO 5, mark latest job title to output's JOB_TITLE column
 
             # temp job info is used to compose job description
             temp_job_info = ""
@@ -301,13 +302,13 @@ class Crawler:
                     company_name_sub = h4_text_sub[len("companyname"):]
                     if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
-                        #TODO mark latest company to output's COMPANY_NAME column
+                        #TODO 6, mark latest company to output's COMPANY_NAME column
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
-                #TODO mark work location to output's COMPANY_LOCATION column
+                #TODO 7, mark work location to output's COMPANY_LOCATION column
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
@@ -468,7 +469,7 @@ class Crawler:
         self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
         if len(potential_link_set) == 0:
             return
-        # TODO mark current search key words to the output's FIRST_NAME, LAST_NAME column
+        # TODO 4, mark current search key words to the output's FIRST_NAME, LAST_NAME column
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):
@@ -477,7 +478,7 @@ class Crawler:
         if self.driver:
             self.driver.get("https://www.linkedin.com")
             self.login()
-            for index, row in self.data.iterrows():
+            for index, row in self.input_data.iterrows():
                 self.crawl_util(row)
                 self.random_pause()
             self.driver.close()
