@@ -84,7 +84,6 @@ class Crawler:
 
         The purpose is to lower the chances of web scraping detection.
         """
-        # TODO fix random pause with time module
         LOG_PHASE = 'Pause'
         to_pause = random.randint(2, 4)
         # logger.debug('{}: Paused for '.format(LOG_PHASE) + str(to_pause) + 's')
@@ -212,6 +211,8 @@ class Crawler:
                 # logger.debug('{}: \nrow_first_name: {}\nrow_last_name: {}\ninner_span_text: {}'.format(
                 #     LOG_PHASE, self.row_first_name, self.row_last_name, inner_span_text))
                 if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
+                    # TODO mark full name on this profile link to output's FULL_NAME_ON_LINK column
+                    # TODO mark this profile link to output's PROFILE_LINK column
                     result_set.add(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(LOG_PHASE)
@@ -236,8 +237,10 @@ class Crawler:
             score = 0
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
+            # TODO for each iteration mark accuracy score to output's ACCURACY_SCORE column
             logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
             logger.debug('=' * 100 + "\n")
+        # TODO start a new row here in the output excel file
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
@@ -283,6 +286,7 @@ class Crawler:
             # record the top job title as the latest job title
             if not latest_job_title:
                 latest_job_title += job_title
+                #TODO mark latest job title to output's JOB_TITLE column
 
             # temp job info is used to compose job description
             temp_job_info = ""
@@ -297,11 +301,13 @@ class Crawler:
                     company_name_sub = h4_text_sub[len("companyname"):]
                     if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
+                        #TODO mark latest company to output's COMPANY_NAME column
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
+                #TODO mark work location to output's COMPANY_LOCATION column
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
@@ -402,7 +408,7 @@ class Crawler:
                     elif len(grad_years) == 1:
                         grad_year = grad_years[0].text
 
-                    logger.debug("graduation year: " + grad_year)
+                    # logger.debug("graduation year: " + grad_year)
                     if self.check_gradyear(grad_year, str(int(gradyrs_col))):
                         logger.debug("graduation year match.")
                         local_score += 1
@@ -410,7 +416,6 @@ class Crawler:
 
     def check_school(self, input: str) -> bool:
         """Check school name with all possible synonyms"""
-        # TODO: add more possible synonyms
         if "universityatbuffalo" in input or "stateuniversityofnewyorkatbuffalo" in input:
             return True
         else:
@@ -463,6 +468,7 @@ class Crawler:
         self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
         if len(potential_link_set) == 0:
             return
+        # TODO mark current search key words to the output's FIRST_NAME, LAST_NAME column
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):

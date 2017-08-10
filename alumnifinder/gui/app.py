@@ -12,10 +12,6 @@ from alumnifinder.gui import images
 validFileTypes = ("*.xlsx", "*.xls")
 miDict = {}
 
-
-# TODO: Implement logger
-
-
 class App:
     def __init__(self, master):
         self.master = master  # used to access master in other functions
@@ -154,9 +150,12 @@ class App:
                 start_row_int = int(miDict["startRow"]) if miDict["startRow"] else None
                 end_row_int = int(miDict["endRow"]) if miDict["endRow"] else None
                 excel = Handler(self.rightFilePathEntry.get(), start_row_int, end_row_int)
-                # TODO split the divided data frame to multiple crawlers
+                # TODO [DOCKER] split the divided data frame to multiple crawlers
+
+                # TODO create a output excel file that all crawlers can access to
                 c = Crawler(excel.divided_data_frame, **miDict)
                 c.crawl_linkedin()
+                # TODO save the output excel file to designated path
             else:
                 return
 
