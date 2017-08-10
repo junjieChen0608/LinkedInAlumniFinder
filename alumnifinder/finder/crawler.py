@@ -251,6 +251,9 @@ class Crawler:
             logger.debug('=' * 100 + "\n")
             # TODO 9, increment row index(global)
             self.row_index+=1
+        self.output_data.at[self.row_index,'FIRST_NAME'] = ''
+        self.row_index += 1
+
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""

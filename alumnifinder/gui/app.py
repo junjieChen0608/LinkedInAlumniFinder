@@ -155,26 +155,26 @@ class App:
                 # TODO [DOCKER] split the divided data frame to multiple crawlers
 
                 # TODO create a output excel file that all crawlers can access to
-                output_frame = self.get_output_frame()
+                columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                           'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+                output_frame = self.get_output_frame(columns)
                 c = Crawler(excel.divided_data_frame, output_frame,**miDict)
                 c.crawl_linkedin()
                 # TODO save the output excel file to designated path
-                self.save_file(output_frame)
+                self.save_file(output_frame,columns)
             else:
                 return
 
-    def get_output_frame(self) -> pd.DataFrame:
+    def get_output_frame(self, columns: list) -> pd.DataFrame:
         """generate a pandas DataFrame to write search result
 
         Returns:
             pandas DataFrame
         """
-        columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                   'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
         output_frame = pd.DataFrame(data = '',index=[0],columns=columns)
         return output_frame
 
-    def save_file(self, output_frame: pd.DataFrame) -> None:
+    def save_file(self, output_frame: pd.DataFrame, columns: list) -> None:
         """Format the DataFrame and save it as Excel file
 
          Args:
@@ -185,8 +185,9 @@ class App:
         workbook = writer.book
         workbook.set_size(2800, 1200)
         worksheet = writer.sheets['Sheet1']
-        worksheet.set_zoom(110)
-        worksheet.set_column('A:H', 25)
+        worksheet.set_zoom(100)
+        size = len(columns)
+        worksheet.set_column('A:'+chr(ord('A')+size-1), 25)
         writer.save()
 
     def check_search_range(self, miDict: dict) -> bool:
