@@ -4,16 +4,23 @@ import pandas as pd
 
 class Handler:
     """Used to process the Excel file data.
+    Args:
+        excel_file(str): the file path of input excel
+        start(int): start row number, 1-based row number in spread sheet
+        end(int): end row number
 
     Attributes:
         original_data_frame (pandas DataFrame): DataFrame representation of the Excel file.
-        divided_frame_size (int): number of rows in the DataFrame.
+        original_frame_size (int): number of rows in the DataFrame.
+        start_row(int): 0-based start row index in the DataFrame representation
+        end_row(int): end row index
+        divided_data_frame(pandas DataFrame): A portion of DataFrame that truncated from the original DataFrame
+        divided_frame_size(int): the number of rows in the truncated DataFrame
         headers (list of str): all of the headers that exist in the DataFrame
         indexes (dict): holds the indexes of the headers based on the value.
-
     """
 
-    def __init__(self, excel_file, start: int, end: int):
+    def __init__(self, excel_file: str, start: int, end: int):
         self.original_data_frame = self.read_excel(excel_file)
         self.original_frame_size = len(self.original_data_frame)
         self.start_row, self.end_row = self.parse_search_range(start, end)
