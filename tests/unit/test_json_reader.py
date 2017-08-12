@@ -1,4 +1,4 @@
-from alumnifinder.utils import jsonreader
+from src.alumnifinder.utils import jsonreader
 
 
 class TestJsonReader:
@@ -20,11 +20,11 @@ class TestJsonReader:
         assert len(data) > 0
         for entry in data:
             assert type(entry) == dict
-            assert entry.get('target') is not None
-            assert type(entry.get('target')) == str
-            assert type(entry.get('routes')) == list
+            assert entry.get('phase') is not None
+            assert type(entry.get('phase')) == str
+            assert type(entry.get('route')) == str
             assert type(entry.get('html')) == list
-            assert type(entry.get('xpath')) == list
+            assert type(entry.get('xpath')) == str
 
     def test_patterns_json(self):
         """Shows how to parse patterns.json."""

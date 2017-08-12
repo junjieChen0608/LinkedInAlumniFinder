@@ -1,10 +1,10 @@
 import logging
 import random
 import re
+import time
 from sys import platform
 
 import pandas as pd
-import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -12,8 +12,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
-from alumnifinder.finder import drivers
-from alumnifinder.utils import jsonreader
+from src.alumnifinder.finder import drivers
+from src.alumnifinder.utils import jsonreader
 
 # logger
 logger = logging.getLogger(__name__)
@@ -33,8 +33,8 @@ class Crawler:
     Args:
         data (panda's DataFrame): dataframe object from Handler.
         kwargs (dict): dictionary of arguments that are passed in from the gui.
-        - geolocation (str): target region
-        - job_position (str): current alumni job position.
+        - location (str): target region
+        - position (str): current alumni job position.
 
     Attributes:
         driver (Selenium WebDriver): used for web scraping.
@@ -46,8 +46,9 @@ class Crawler:
     def __init__(self, data: pd.DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
         self.data = data
-        self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
-        self.job_position = kwargs['jobPosition'] if 'jobPosition' in kwargs else ""
+        self.geo_location = kwargs['geo_location'] if 'geo_location' in kwargs else ""
+        self.job_position = kwargs['job_position'] if 'job_position' in kwargs else ""
+
         self.driver = None
         self.start_region = 'Buffalo'
         self.row_first_name = ""
@@ -240,7 +241,7 @@ class Crawler:
             logger.debug('=' * 100 + "\n")
 
     def verify_jobs(self, row: pd.Series) -> int:
-        """verify job history, check if input job title matches the latest job tile in this profile link"""
+        """verify job history, linkedin if input job title matches the latest job tile in this profile link"""
         logger.debug('Verifying jobs...')
         local_score = 0
 
@@ -303,7 +304,7 @@ class Crawler:
             if not latest_job_info:
                 latest_job_info = temp_job_info
 
-            # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
+            # linkedin if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
             if not job_title_from_excel:
                 job_title_from_excel = latest_job_title
@@ -313,13 +314,13 @@ class Crawler:
                 logger.debug('Current company: ' + job_company_from_excel)
                 break
 
-            # check if job title matches
+            # linkedin if job title matches
             job_title_sub = self.convert_str(job_title)
             if job_title_sub in job_title_from_excel or job_title_from_excel in job_title_sub:
                 logger.debug('Job title match.')
                 local_score += 1
 
-            # check if company matches
+            # linkedin if company matches
             if job_company_from_excel in company_name_sub or company_name_sub in job_company_from_excel:
                 logger.debug('Company name match.')
                 local_score += 1
@@ -337,8 +338,8 @@ class Crawler:
             target_job = self.convert_str(self.job_position)
             if job_title in target_job:
                 local_score += 1
-        if self.geolocation:
-            target_location = self.convert_str(self.geolocation)
+        if self.geo_location:
+            target_location = self.convert_str(self.geo_location)
             if target_location in job_info:
                 local_score += 1
         return local_score
@@ -365,7 +366,7 @@ class Crawler:
         #  There are 3 school columns in the input spreadsheet
         #   need to match each of them with current profile link
         for school_col, major_col, degree_col, gradyrs_col in zip(schools, majors, degrees, grad_yrs):
-            # check current school_col value is a non-empty string, not other type
+            # linkedin current school_col value is a non-empty string, not other type
             if type(school_col) is str and school_col:
                 # iterate on all education data in this profile link
                 for education in education_list:
@@ -373,7 +374,7 @@ class Crawler:
                     school = education.find_element(By.TAG_NAME, "h3")
                     school_name = school.text
                     # logger.debug(school_name)
-                    # check school
+                    # linkedin school
                     if self.check_school(self.convert_str(school_name)):
                         logger.debug("school match.")
                         local_score += 1
@@ -385,7 +386,7 @@ class Crawler:
                         # logger.debug(major_info.text)
                         major_text += major_info.text
                     # logger.debug(major_text)
-                    # check major and degree
+                    # linkedin major and degree
                     if self.check_degree(self.convert_str(major_text), self.convert_str(degree_col)):
                         logger.debug("degree match.")
                         local_score += 1
@@ -417,7 +418,7 @@ class Crawler:
             return False
 
     def check_degree(self, text_from_web: str, text_from_sheet: str) -> bool:
-        """check if degree matches"""
+        """linkedin if degree matches"""
         if ("bachelor" in text_from_web or "master" in text_from_web) and "science" in text_from_web:
             if "bs" in text_from_sheet:
                 return True
@@ -436,11 +437,11 @@ class Crawler:
             return text_from_sheet in text_from_web
 
     def check_major(self, text_from_web: str, text_from_sheet: str) -> bool:
-        """check major"""
+        """linkedin major"""
         return text_from_sheet in text_from_web
 
     def check_gradyear(self, text_from_web: str, text_from_sheet: str) -> bool:
-        """check graduation year"""
+        """linkedin graduation year"""
         return text_from_web == text_from_sheet
 
     def convert_str(self, input: str) -> str:

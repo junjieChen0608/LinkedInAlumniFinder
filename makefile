@@ -17,10 +17,10 @@ docker-image:
 	docker build -t alumni-finder-machine .
 
 run:
-	python main.py
+	python main.py --gui
 
 test:
-	python3 -m pytest --capture=no tests/
+	pytest -n 2 --capture=no
 	@rm -rf .cache/
 
 virtualenv:

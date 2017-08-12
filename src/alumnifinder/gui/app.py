@@ -5,7 +5,7 @@ from sys import platform
 from tkinter import *
 from tkinter import filedialog as fd
 
-from alumnifinder.gui import images
+from src.alumnifinder.gui import images
 
 validFileTypes = ("*.xlsx", "*.xls")
 
@@ -170,8 +170,8 @@ class App:
         elif self.rightSavePathEntry.get() == '':
             self.error_pop_up("Please choose a save location.")
         else:
-            self.client_entry['geolocation'] = self.e1.get().strip()
-            self.client_entry['jobPosition'] = self.e2.get().strip()
+            self.client_entry['geo_location'] = self.e1.get().strip()
+            self.client_entry['job_position'] = self.e2.get().strip()
 
     def check_start_end(self):
         """Checks start and end rows"""

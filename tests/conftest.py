@@ -1,5 +1,12 @@
+from sys import platform
+
 import pandas as pd
 import pytest
+from selenium import webdriver
+
+from src.alumnifinder.finder import drivers
+
+# To be used by all tests
 
 # test data
 info = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
@@ -45,3 +52,17 @@ def csv_file(tmpdir_factory):
     df = pd.DataFrame(test_dict)
     df.to_csv(csv_file_path, index=False)
     return csv_file_path
+
+
+@pytest.fixture(scope='session')
+def driver():
+    if platform.startswith('linux'):
+        chrome_path = drivers.LINUX_DRIVER_PATH
+    elif platform.startswith('darwin'):
+        chrome_path = drivers.MAC_DRIVER_PATH
+    elif platform.startswith('win32') or platform.startswith('cygwin'):
+        chrome_path = drivers.WIN_DRIVER_PATH
+    else:
+        raise OSError("Unsupported operating system.")
+
+    return webdriver.Chrome(chrome_path)
