@@ -4,12 +4,12 @@ from src.alumnifinder.utils import jsonreader
 
 
 class TestLogin:
-    def test_login_pages(self, driver):
-        """Check if web elements exist at each login-page. Updates web.json if test fails"""
+    def test_login_elems(self, driver):
+        """Check if web elements exist at the login-page. Updates web.json if test fails"""
         for index, entry in enumerate(jsonreader.get_web_elements()):
             if entry.get('phase') == 'login-page':
                 driver.get(entry.get('route'))
-                for obj in entry.get('html'):  # check each web element
+                for obj in entry.get('html'):  # check each object in 'html'
                     if obj.get('valid'):  # True
                         flag = jsonreader.get_flags(obj.get('type'))
                         try:
@@ -19,6 +19,6 @@ class TestLogin:
                             raise NoSuchElementException(
                                 'At: {}, web element not found!\n'
                                 'Fix \"web.json\" at index: {} to continue!'.format(entry.get('route'), index))
-                    else:
+                    else:  # still False
                         raise ValueError('In web.json (index: {}),'
-                                         ' JSON object,\"valid\" is still false!'.format(index))
+                                         ' JSON object(\"valid\") is still false!'.format(index))
