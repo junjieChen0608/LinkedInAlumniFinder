@@ -131,6 +131,7 @@ class Crawler:
             else:
                 logger.warning('{}: FAILED.'.format(LOG_PHASE))
                 self.driver.get('https://www.linkedin.com')  # try-again with a different account
+                self.driver.delete_all_cookies()
 
         msg = '{}: Could not login with any credentials.'.format(LOG_PHASE)  # All credentials failed
         logger.exception(msg)

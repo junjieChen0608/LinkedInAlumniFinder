@@ -23,5 +23,5 @@ $ make test
 ```
 
 ```
-$ python -m pytest --capture=no tests/
+$ pytest --capture=no
 ```

@@ -37,3 +37,8 @@ class TestJsonReader:
             assert type(pattern.get('category')) == str
             assert type(pattern.get('data')) == list
             assert len(pattern.get('data')) > 0
+
+    def test_get_login_elems(self):
+        elems = jsonreader.get_login_elements()
+        assert type(elems) == list
+        assert len(elems) > 0

@@ -1,12 +1,7 @@
 [
   {
-    "email": "371000549@qq.com",
     "password": "1313123",
-    "valid": "true"
-  },
-  {
-    "email": "example",
-    "password": "example",
+    "email": "371000549@qq.com",
     "valid": "true"
   }
 ]

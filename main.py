@@ -25,6 +25,7 @@ def main(gui: bool, excel: str, start: int, finish: int, job_position: str, geo_
         if start and finish:
             check_start_finish(start=start, finish=finish)
             handler = Handler(excel_file=excel, start=start, end=finish)
+            # TODO: figure out multi-threading
         else:
             arguments = check_if_none(job_position, geo_location)
             handler = Handler(excel_file=excel)
@@ -33,7 +34,7 @@ def main(gui: bool, excel: str, start: int, finish: int, job_position: str, geo_
             cage = []
             for slice in pie:
                 cage.append(Crawler(slice, **arguments))
-                # TODO: implement multi-threading
+                # TODO: figure out multi-threading
     else:
         click.echo("Please provide an excel file or use GUI")
 

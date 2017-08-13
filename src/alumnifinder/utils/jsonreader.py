@@ -23,7 +23,7 @@ def get_patterns() -> list:
         return json.load(json_file)
 
 
-def get_flags(elem: str):
+def get_flag(elem: str):
     if elem == 'id':
         return By.ID
     elif elem == 'class':
@@ -42,7 +42,7 @@ def get_flags(elem: str):
         return By.TAG_NAME
 
 
-def update_web_json(index: int, field: str, indicator, new_val):
+def web_json_failure(index: int, field: str, indicator, new_val):
     with open(config.login_path) as json_file:
         data = json.load(json_file)
         if field == 'html':
@@ -51,3 +51,17 @@ def update_web_json(index: int, field: str, indicator, new_val):
                     obj['valid'] = new_val
                     with open(config.login_path, "w") as json_file:
                         json.dump(data, json_file)
+
+
+def cred_json_failure(index: int):
+    with open(config.credentials_path) as json_file:
+        data = json.load(json_file)
+        data[index]['valid'] = False
+        with open(config.credentials_path, "w") as json_file:
+            json.dump(data, json_file)
+
+
+def get_login_elements() -> list:
+    for entry in get_web_elements():
+        if entry.get('phase') == 'login-page':
+            return [elem for elem in entry.get('html')]
