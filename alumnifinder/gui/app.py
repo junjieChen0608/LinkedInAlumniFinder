@@ -155,13 +155,13 @@ class App:
                 # TODO [DOCKER] split the divided data frame to multiple crawlers
 
                 # TODO create a output excel file that all crawlers can access to
-                columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                columns = ['ROW_NUMBER_FROM_INPUT','FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
                            'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
                 output_frame = self.get_output_frame(columns)
                 c = Crawler(excel.divided_data_frame, output_frame,**miDict)
                 c.crawl_linkedin()
                 # TODO save the output excel file to designated path
-                self.save_file(output_frame,columns)
+                self.save_file(output_frame)
             else:
                 return
 
@@ -174,7 +174,7 @@ class App:
         output_frame = pd.DataFrame(data = '',index=[0],columns=columns)
         return output_frame
 
-    def save_file(self, output_frame: pd.DataFrame, columns: list) -> None:
+    def save_file(self, output_frame: pd.DataFrame) -> None:
         """Format the DataFrame and save it as Excel file
 
          Args:
@@ -186,7 +186,7 @@ class App:
         workbook.set_size(2800, 1200)
         worksheet = writer.sheets['Sheet1']
         worksheet.set_zoom(100)
-        size = len(columns)
+        size = len(list(output_frame.columns.values))
         worksheet.set_column('A:'+chr(ord('A')+size-1), 25)
         writer.save()
 

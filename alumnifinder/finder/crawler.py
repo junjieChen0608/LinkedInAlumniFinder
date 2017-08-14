@@ -56,6 +56,7 @@ class Crawler:
         self.start_region = 'Buffalo'
         self.row_first_name = ""
         self.row_last_name = ""
+        self.row_counter = int(kwargs["startRow"])
 
     def setup_driver(self) -> None:
         """Locates path of WebDriver Chrome executable and sets it to the driver.
@@ -217,6 +218,7 @@ class Crawler:
                 if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
                     # TODO 1, mark full name on this profile link to output's FULL_NAME_ON_LINKEDIN column
                     self.output_data.at[local_row_index, "FULL_NAME_ON_LINKEDIN"] = inner_span.text
+
                     # TODO 2, mark this profile link to output's PROFILE_LINK column
                     self.output_data.at[local_row_index,"PROFILE_LINK"] = profile_link
                     # TODO 3, increment the row index(local)
@@ -488,6 +490,7 @@ class Crawler:
         # TODO 4, mark current search key words to the output's FIRST_NAME, LAST_NAME column
         self.output_data.at[self.row_index,"FIRST_NAME"] = row['FIRST_NAME']
         self.output_data.at[self.row_index, "LAST_NAME"] = row['LAST_NAME']
+        self.output_data.at[self.row_index, "ROW_NUMBER_FROM_INPUT"] = self.row_counter
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):
@@ -498,6 +501,7 @@ class Crawler:
             self.login()
             for index, row in self.input_data.iterrows():
                 self.crawl_util(row)
+                self.row_counter+=1
                 self.random_pause()
             self.driver.close()
             logger.debug("Crawling complete")
