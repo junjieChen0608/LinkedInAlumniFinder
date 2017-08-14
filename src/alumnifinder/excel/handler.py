@@ -24,11 +24,12 @@ class Handler:
         self.headers = self.check_headers()
         self.size = len(self.data)
         if 'start' in kwargs and 'end' in kwargs:
+            self.check_start_finish(kwargs['start'], kwargs['finish'])
             self.start_row, self.end_row = self.parse_search_range(kwargs['start'], kwargs['end'])
+            self.divided_data = self.data.iloc[self.start_row:self.end_row]
+            self.divided_data_size = len(self.divided_data)
         elif ('start' in kwargs and 'end' not in kwargs) or ('start' not in kwargs and 'end' in kwargs):
             raise ValueError('Not enough start/end arguments.')
-            # self.divided_data_frame = self.data.iloc[self.start_row:self.end_row]
-            # self.divided_frame_size = len(self.divided_data_frame)
 
     def read_excel(self, excel_file: str) -> pd.DataFrame:
         """Determines which engine to use based on type of excel file.
@@ -119,3 +120,16 @@ class Handler:
             return (start - 2, self.size)
         else:
             return (start-2, end-1)
+
+    def check_start_finish(self, start: int, finish: int) -> None:
+        """Error checking start and finish"""
+        if start < 0:
+            raise ValueError("Start option cannot be negative")
+        elif finish < 0:
+            raise ValueError("Finish option cannot be negative")
+        elif start > finish:
+            raise ValueError("Start option cannot be greater than finish option")
+        elif finish < start:
+            raise ValueError("Finish option cannot be smaller than start option")
+        else:
+            pass
