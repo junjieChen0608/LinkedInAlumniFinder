@@ -5,7 +5,7 @@ The objective of this project is to develop a standalone application that levera
 ## CLI
 
 ```
-$ python main.py --help 
+$ python cli.py --help 
 ```
 
 ## Tests

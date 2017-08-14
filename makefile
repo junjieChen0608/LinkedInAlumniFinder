@@ -20,7 +20,7 @@ run:
 	python main.py --gui
 
 test:
-	pytest -n 2 --capture=no
+	pytest -n 4 --capture=no
 	@rm -rf .cache/
 
 virtualenv:
