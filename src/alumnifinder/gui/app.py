@@ -159,51 +159,34 @@ class App:
         worksheet.set_column('A:'+chr(ord('A')+size-1), 25)
         writer.save()
 
-    def check_search_range(self) -> bool:
-        start = self.client_entry["startRow"]
-        end = self.client_entry["end_row"]
-        if not start and not end:
-            return True
-        elif not start or not end:
-            self.error_pop_up("Please specify both start and end row if you want to search in a range")
-            return False
-        elif int(start) < 0 or int(start) > int(end):
-            self.error_pop_up("Please make sure start row < end row, and both should be non-negative")
-            return False
-        elif int(start) >= 0 and int(start) < 2:
-            self.error_pop_up("The first effective row in the spread sheet is starting from 2nd row")
-            return False
-        else:
-            return True
-
     def error_pop_up(self, text):
         top = Toplevel()
         top.title("Error")
         top.iconphoto(top._w, self.error_icon)
         top.configure(width=100)
         top.resizable(width=False, height=False)
-        msg = Message(top, text=text, justify="center")
-        msg.configure(width=250, padx=25, pady=25)
-        msg.pack()
+        message = Message(top, text=text, justify="center")
+        message.configure(width=250, padx=25, pady=25)
+        message.pack()
 
         # position error in center of root window
         top.update()  # update gets the latest winfo data
-        rootX = self.master.winfo_x()
-        rootY = self.master.winfo_y()
-        rootWidth = self.master.winfo_width()
-        rootHeight = self.master.winfo_height()
-        topWidth = msg.winfo_width()
-        topHeight = msg.winfo_height()
-        finalX = rootX + ((rootWidth / 2) - (topWidth / 2))
-        finalY = rootY + ((rootHeight / 2) - (topHeight / 2))
-        top.geometry("%dx%d+%d+%d" % (topWidth, topHeight, finalX, finalY))
+        root_x = self.master.winfo_x()
+        root_y = self.master.winfo_y()
+        root_width = self.master.winfo_width()
+        root_height = self.master.winfo_height()
+        top_width = message.winfo_width()
+        top_height = message.winfo_height()
+        final_x = root_x + ((root_width / 2) - (top_width / 2))
+        final_y = root_y + ((root_height / 2) - (top_height / 2))
+        top.geometry("%dx%d+%d+%d" % (top_width, top_height, final_x, final_y))
 
         # grabs focus for top so bottom window can't be interacted with until top is gone
         top.grab_set()
         self.master.wait_window(top)
         top.grab_release()
 
-    def check_path_save(self, file_path: str, save_path: str):
+    def check_path_save(self, file_path: str, save_path: str) -> bool:
         """Checks file and save path"""
         if not file_path:
             self.error_pop_up("Please choose a file to search from.")
@@ -214,7 +197,7 @@ class App:
         else:
             return True
 
-    def check_start_end(self, start_row: str, end_row: str):
+    def check_start_end(self, start_row: str, end_row: str) -> bool:
         """Checks start and end rows"""
         if start_row and not end_row:
             self.error_pop_up("Please enter an end row.")
@@ -254,26 +237,41 @@ class App:
         else:
             return True  # start and end rows not being used
 
+    def check_start_end_types(self, start, end) -> bool:
+        """Checks correct types"""
+        try:
+            int(start)
+            int(end)
+            return True
+        except ValueError:
+            return False
+
     def ok_button(self):
         if self.check_path_save(file_path=self.right_file_path_entry.get(), save_path=self.right_save_path_entry.get()):
-            self.client_entry["geolocation"] = self.e1.get().strip()
-            self.client_entry["job_position"] = self.e2.get().strip()
-            self.client_entry["start_row"] = self.e3.get().strip()
-            self.client_entry["end_row"] = self.e4.get().strip()
-            print(self.client_entry)
-            # search range error checking
-            if self.check_search_range():
-                start_row_int = int(self.client_entry["startRow"]) if self.client_entry["startRow"] else None
-                end_row_int = int(self.client_entry["end_row"]) if self.client_entry["end_row"] else None
-                excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row_int, end=end_row_int)
+            if self.check_start_end(start_row=self.e3.get().strip(), end_row=self.e4.get().strip()):
+                self.client_entry["geolocation"] = self.e1.get().strip()
+                self.client_entry["job_position"] = self.e2.get().strip()
+                if self.check_start_end_types(start=self.e3.get().strip(), end=self.e4.get().strip()):
+                    self.client_entry["start_row"] = int(self.e3.get().strip())
+                    self.client_entry["end_row"] = int(self.e4.get().strip())
 
-                # TODO create a output excel file that all crawlers can access to
-                columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                           'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
-                output_frame = self.get_output_frame(columns)
-                c = Crawler(excel.divided_data_frame, output_frame, **self.client_entry)
-                c.crawl_linkedin()
-                # TODO save the output excel file to designated path
-                self.save_file(output_frame, columns)
+                    print(self.client_entry)
+
+                    start_row = self.client_entry["start_row"]
+                    end_row = self.client_entry["end_row"]
+
+                    excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)
+
+                    # TODO create a output excel file that all crawlers can access to
+                    columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                               'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+                    output_frame = self.get_output_frame(columns)
+                    c = Crawler(input_data=excel.divided_data, output_data=output_frame, **self.client_entry)
+                    c.crawl_linkedin()
+                    # TODO save the output excel file to designated path
+                    self.save_file(output_frame, columns)
+                else:
+                    pass
             else:
-                return
+                # TODO: check other case
+                pass

@@ -7,9 +7,8 @@ class Handler:
 
     Args:
         excel_file (str): the file path of input excel
-        kwargs:
-        - start (int): start row number, 1-based row number in spread sheet
-        - end (int): end row number
+        start (int): start row number, 1-based row number in spread sheet
+        end (int): end row number
 
     Attributes:
         data (pandas DataFrame): DataFrame representation of the Excel file.

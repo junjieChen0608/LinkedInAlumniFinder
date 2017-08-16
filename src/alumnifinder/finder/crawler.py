@@ -67,8 +67,8 @@ class Crawler:
         Raises:
             OSError: Unsupported operating system found.
         """
-        LOG_PHASE = 'Setup'
-        logger.debug('{}: Setting up web driver...'.format(LOG_PHASE))
+        log_phase = 'Setup'
+        logger.debug('{}: Setting up web driver...'.format(log_phase))
 
         if platform.startswith('linux'):
             chrome_path = drivers.LINUX_DRIVER_PATH
@@ -77,20 +77,20 @@ class Crawler:
         elif platform.startswith('win32') or platform.startswith('cygwin'):
             chrome_path = drivers.WIN_DRIVER_PATH
         else:
-            msg = '{}: Unsupported operating system found.'.format(LOG_PHASE)
+            msg = '{}: Unsupported operating system found.'.format(log_phase)
             logger.exception(msg)
             raise OSError(msg)
         self.driver = webdriver.Chrome(chrome_path)  # sets member variable.
-        logger.debug('{}: SUCCESS.'.format(LOG_PHASE))
+        logger.debug('{}: SUCCESS.'.format(log_phase))
 
     def random_pause(self) -> None:
         """Randomly pauses WebDriver.
 
         The purpose is to lower the chances of web scraping detection.
         """
-        LOG_PHASE = 'Pause'
+        log_phase = 'Pause'
         to_pause = random.randint(2, 4)
-        # logger.debug('{}: Paused for '.format(LOG_PHASE) + str(to_pause) + 's')
+        logger.debug('{}: Paused for '.format(log_phase) + str(to_pause) + 's')
         time.sleep(to_pause)
 
     def login(self) -> None:
@@ -106,36 +106,36 @@ class Crawler:
             EOFError: All credentials in 'config/cred.json' failed to login. This could be due to a scraper account
             being blocked.
         """
-        LOG_PHASE = 'Login'
-        logger.debug('{}: Attempting to login...'.format(LOG_PHASE))
+        log_phase = 'Login'
+        logger.debug('{}: Attempting to login...'.format(log_phase))
         for account in jsonreader.get_credentials():
-            logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
+            logger.debug('{}: Finding web element(s)...'.format(log_phase))
             try:
                 login_email = WebDriverWait(self.driver, 10).until(
                     expected_conditions.presence_of_element_located((By.CLASS_NAME, 'login-email'))
                 )
                 login_password = self.driver.find_element_by_class_name('login-password')
                 sign_in_btn = self.driver.find_element_by_id('login-submit')
-                logger.debug('{}: Inputting login credentials...'.format(LOG_PHASE))
+                logger.debug('{}: Inputting login credentials...'.format(log_phase))
                 login_email.clear()
                 login_email.send_keys(account.get('email'))
                 login_password.clear()
                 login_password.send_keys(account.get('password'))
                 sign_in_btn.click()
             except NoSuchElementException:
-                msg = '{}: Web element could not be found.'.format(LOG_PHASE)
+                msg = '{}: Web element could not be found.'.format(log_phase)
                 logger.exception(msg)
                 raise NoSuchElementException(msg)
 
             if 'Log In or Sign Up' not in self.driver.title:
-                logger.debug('{}: SUCCESS.'.format(LOG_PHASE))
+                logger.debug('{}: SUCCESS.'.format(log_phase))
                 return
             else:
-                logger.warning('{}: FAILED.'.format(LOG_PHASE))
+                logger.warning('{}: FAILED.'.format(log_phase))
                 self.driver.get('https://www.linkedin.com')  # try-again with a different account
                 self.driver.delete_all_cookies()
 
-        msg = '{}: Could not login with any credentials.'.format(LOG_PHASE)  # All credentials failed
+        msg = '{}: Could not login with any credentials.'.format(log_phase)  # All credentials failed
         logger.exception(msg)
         raise EOFError(msg)
 
@@ -145,8 +145,8 @@ class Crawler:
         Raises:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
-        LOG_PHASE = 'Start-Search'
-        logger.debug('{}: Finding search bar web element(s)...'.format(LOG_PHASE))
+        log_phase = 'Start-Search'
+        logger.debug('{}: Finding search bar web element(s)...'.format(log_phase))
 
         # reload the LinkedIn home page to start search, this is meant to avoid reuse of previous search result
         self.driver.get("https://www.linkedin.com")
@@ -156,12 +156,12 @@ class Crawler:
                 expected_conditions.presence_of_element_located((By.XPATH, '//*[@class="ember-text-field ember-view"]'))
             )
         except NoSuchElementException:
-            msg = '{}: Web element could not be found.'.format(LOG_PHASE)
+            msg = '{}: Web element could not be found.'.format(log_phase)
             logger.exception(msg)
             raise NoSuchElementException(msg)
-        logger.debug('{}: Inputting arguments into search bar...'.format(LOG_PHASE))
+        logger.debug('{}: Inputting arguments into search bar...'.format(log_phase))
         search_bar.clear()
-        logger.debug('{}: Searching ['.format(LOG_PHASE) + self.row_first_name + " " + self.row_last_name + ']')
+        logger.debug('{}: Searching ['.format(log_phase) + self.row_first_name + " " + self.row_last_name + ']')
         search_bar.send_keys(self.row_first_name + " " + self.row_last_name + " " + self.start_region)
         search_bar.send_keys(Keys.RETURN)
 
@@ -174,8 +174,8 @@ class Crawler:
         Raises:
             NoSuchElementException: Web element could not be found, (most likely changed).
         """
-        LOG_PHASE = 'Search-Results'
-        logger.debug('{}: Waiting for search results of '.format(LOG_PHASE) +
+        log_phase = 'Search-Results'
+        logger.debug('{}: Waiting for search results of '.format(log_phase) +
                      "[" + self.row_first_name + " " + self.row_last_name + "]")
         try:
             potential_divs = WebDriverWait(self.driver, 10).until(
@@ -183,11 +183,11 @@ class Crawler:
                     By.XPATH, '//div[@class="search-result__info pt3 pb4 ph0"]')))
             return potential_divs
         except NoSuchElementException:
-            msg = '{}: Web element could not be found.'.format(LOG_PHASE)
+            msg = '{}: Web element could not be found.'.format(log_phase)
             logger.exception(msg)
             return []
         except TimeoutException:
-            logger.debug('{}: No match found.'.format(LOG_PHASE))
+            logger.debug('{}: No match found.'.format(log_phase))
             return []
 
     def coarse_filter(self, potential_divs: list, result_set: set) -> None:
@@ -199,11 +199,11 @@ class Crawler:
             potential_divs (list):
             result_set (set):
         """
-        LOG_PHASE = 'Coarse-Filter'
-        logger.debug('{}: Starting filter...'.format(LOG_PHASE))
+        log_phase = 'Coarse-Filter'
+        logger.debug('{}: Starting filter...'.format(log_phase))
         local_row_index = self.row_index
         for div in potential_divs:  # web-element
-            logger.debug('{}: Finding web element(s)...'.format(LOG_PHASE))
+            logger.debug('{}: Finding web element(s)...'.format(log_phase))
             try:
                 inner_anchor = div.find_element(By.TAG_NAME, "a")
                 profile_link = inner_anchor.get_attribute("href")
@@ -214,7 +214,7 @@ class Crawler:
                 inner_span = inner_anchor.find_element(By.XPATH, "//h3[@id=\"" + inner_h3_id + "\"]/span[1]/span")
                 inner_span_text = inner_span.text.lower().replace(" ", "")
                 # logger.debug('{}: \nrow_first_name: {}\nrow_last_name: {}\ninner_span_text: {}'.format(
-                #     LOG_PHASE, self.row_first_name, self.row_last_name, inner_span_text))
+                #     log_phase, self.row_first_name, self.row_last_name, inner_span_text))
                 if self.row_first_name in inner_span_text and self.row_last_name in inner_span_text:
                     # TODO 1, mark full name on this profile link to output's FULL_NAME_ON_LINKEDIN column
                     self.output_data.at[local_row_index, "FULL_NAME_ON_LINKEDIN"] = inner_span.text
@@ -224,37 +224,36 @@ class Crawler:
                     local_row_index+=1
                     result_set.add(profile_link)
             except NoSuchElementException:
-                msg = '{}: Web element could not be found.'.format(LOG_PHASE)
+                msg = '{}: Web element could not be found.'.format(log_phase)
                 logger.exception(msg)
                 raise NoSuchElementException(msg)
             except StaleElementReferenceException:
-                msg = '{}: Web element lost.'.format(LOG_PHASE)
+                msg = '{}: Web element lost.'.format(log_phase)
                 logger.exception(msg)
                 raise StaleElementReferenceException(msg)
         log_result = str(len(result_set))
-        logger.debug('{}: \"{}\" candidates survived from coarse-grain filter.'.format(LOG_PHASE, log_result))
+        logger.debug('{}: \"{}\" candidates survived from coarse-grain filter.'.format(log_phase, log_result))
 
     def fine_filter(self, potential_link_set: set, row) -> None:
         """fine-grain filter that evaluates accuracy score of all candidate profile links"""
-        LOG_PHASE = 'Fine-Filter'
+        log_phase = 'Fine-Filter'
         log_set_num = str(len(potential_link_set))
-        logger.debug('{}: Checking \"{}\" candidates profile links...'.format(LOG_PHASE, log_set_num))
+        logger.debug('{}: Checking \"{}\" candidates profile links...'.format(log_phase, log_set_num))
         logger.debug('=' * 100)
         for link in potential_link_set:
-            logger.debug('{}: Clicked: {}'.format(LOG_PHASE, link))
+            logger.debug('{}: Clicked: {}'.format(log_phase, link))
             self.driver.get(link)
             score = 0
             score += self.verify_jobs(row)  # verify job history
             score += self.verify_degrees(row)  # verify education
             # TODO 8, for each iteration mark accuracy score to output's ACCURACY_SCORE column
             self.output_data.at[self.row_index,'ACCURACY_SCORE'] = score
-            logger.debug('{}: Accuracy score: {}'.format(LOG_PHASE, score))
+            logger.debug('{}: Accuracy score: {}'.format(log_phase, score))
             logger.debug('=' * 100 + "\n")
             # TODO 9, increment row index(global)
             self.row_index+=1
-        self.output_data.at[self.row_index,'FIRST_NAME'] = ''
+        self.output_data.at[self.row_index, 'FIRST_NAME'] = ''
         self.row_index += 1
-
 
     def verify_jobs(self, row: pd.Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
@@ -300,8 +299,8 @@ class Crawler:
             # record the top job title as the latest job title
             if not latest_job_title:
                 latest_job_title += job_title
-                #TODO 5, mark latest job title to output's JOB_TITLE column
-                self.output_data.at[self.row_index,'JOB_TITLE'] = latest_job_title
+                # TODO 5, mark latest job title to output's JOB_TITLE column
+                self.output_data.at[self.row_index, 'JOB_TITLE'] = latest_job_title
 
             # temp job info is used to compose job description
             temp_job_info = ""
@@ -316,16 +315,16 @@ class Crawler:
                     company_name_sub = h4_text_sub[len("companyname"):]
                     if not latest_job_company:
                         latest_job_company = h4_text[len("Company Name") + 1:]
-                        #TODO 6, mark latest company to output's COMPANY_NAME column
-                        self.output_data.at[self.row_index,'COMPANY_NAME'] = latest_job_company
+                        # TODO 6, mark latest company to output's COMPANY_NAME column
+                        self.output_data.at[self.row_index, 'COMPANY_NAME'] = latest_job_company
                 temp_job_info += h4_text + "\n"
 
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
                 off_set = latest_job_info.find('Location') + len('Location') + 1
-                #TODO 7, mark work location to output's COMPANY_LOCATION column
-                self.output_data.at[self.row_index,'COMPANY_LOCATION'] = latest_job_info[off_set:].replace("\n", "")
+                # TODO 7, mark work location to output's COMPANY_LOCATION column
+                self.output_data.at[self.row_index, 'COMPANY_LOCATION'] = latest_job_info[off_set:].replace("\n", "")
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
@@ -472,17 +471,17 @@ class Crawler:
 
     def crawl_util(self, row):
         """crawl utility function for loop"""
-        LOG_PHASE = 'Crawl-Util'
+        log_phase = 'Crawl-Util'
         self.row_first_name = row["FIRST_NAME"].lower()
         self.row_last_name = row["LAST_NAME"].lower()
         self.start_search()
         potential_divs = self.get_search_results()
         log_div = str(len(potential_divs))
         if len(potential_divs) == 0:
-            logger.debug("{}: No match for [".format(LOG_PHASE) + self.row_first_name + " " + self.row_last_name + "]...")
+            logger.debug("{}: No match for [".format(log_phase) + self.row_first_name + " " + self.row_last_name + "]")
             return
         potential_link_set = set()
-        logger.debug("{}: \"{}\" potential div(s) entering coarse-grain filter".format(LOG_PHASE, log_div))
+        logger.debug("{}: \"{}\" potential div(s) entering coarse-grain filter".format(log_phase, log_div))
         self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
         if len(potential_link_set) == 0:
             return
