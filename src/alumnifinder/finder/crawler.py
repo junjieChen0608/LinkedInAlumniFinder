@@ -56,7 +56,7 @@ class Crawler:
         self.start_region = 'Buffalo'
         self.row_first_name = ""
         self.row_last_name = ""
-        self.row_counter = int(kwargs["startRow"])
+        self.row_counter = int(kwargs["start_row"])  # TODO: fix, assumes 'start_row' is always provided
 
     def setup_driver(self) -> None:
         """Locates path of WebDriver Chrome executable and sets it to the driver.
@@ -433,9 +433,9 @@ class Crawler:
                         local_score += 1
         return local_score
 
-    def check_school(self, input: str) -> bool:
+    def check_school(self, str_input: str) -> bool:
         """Check school name with all possible synonyms"""
-        if "universityatbuffalo" in input or "stateuniversityofnewyorkatbuffalo" in input:
+        if "universityatbuffalo" in str_input or "stateuniversityofnewyorkatbuffalo" in str_input:
             return True
         else:
             return False
@@ -467,9 +467,9 @@ class Crawler:
         """check graduation year"""
         return text_from_web == text_from_sheet
 
-    def convert_str(self, input: str) -> str:
+    def convert_str(self, str_input: str) -> str:
         """helper function to remove all non-alphabet characters in given string, and convert it to lower case"""
-        return re.sub("\W", "", input).lower()
+        return re.sub("\W", "", str_input).lower()
 
     def crawl_util(self, row):
         """crawl utility function for loop"""
