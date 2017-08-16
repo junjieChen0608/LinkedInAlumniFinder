@@ -19,16 +19,16 @@ class Handler:
         end_row(int): end row index
     """
 
-    def __init__(self, excel_file: str, **kwargs):
+    def __init__(self, excel_file: str, start=None, end=None):
         self.data = self.read_excel(excel_file)
         self.headers = self.check_headers()
         self.size = len(self.data)
-        if 'start' in kwargs and 'end' in kwargs:
-            self.check_start_finish(kwargs['start'], kwargs['finish'])
-            self.start_row, self.end_row = self.parse_search_range(kwargs['start'], kwargs['end'])
+        if start and end:
+            self.check_start_finish(start, end)
+            self.start_row, self.end_row = self.parse_search_range(start, end)
             self.divided_data = self.data.iloc[self.start_row:self.end_row]
             self.divided_data_size = len(self.divided_data)
-        elif ('start' in kwargs and 'end' not in kwargs) or ('start' not in kwargs and 'end' in kwargs):
+        elif (start and not end) or (not start and end):
             raise ValueError('Not enough start/end arguments.')
 
     def read_excel(self, excel_file: str) -> pd.DataFrame:
@@ -115,11 +115,11 @@ class Handler:
             A tuple of 0-based start and end index
         """
         if not start or not end:
-            return (0, self.size)
+            return 0, self.size
         elif end > self.size:
-            return (start - 2, self.size)
+            return start - 2, self.size
         else:
-            return (start-2, end-1)
+            return start - 2, end - 1
 
     def check_start_finish(self, start: int, finish: int) -> None:
         """Error checking start and finish"""

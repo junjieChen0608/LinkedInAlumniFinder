@@ -51,7 +51,7 @@ class Crawler:
         self.output_data = output_data
         self.row_index = 0
         self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
-        self.job_position = kwargs['jobPosition'] if 'jobPosition' in kwargs else ""
+        self.job_position = kwargs['job_position'] if 'job_position' in kwargs else ""
         self.driver = None
         self.start_region = 'Buffalo'
         self.row_first_name = ""
