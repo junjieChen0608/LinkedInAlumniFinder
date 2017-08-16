@@ -1,6 +1,6 @@
 from tkinter import *
 
-from alumnifinder.gui.app import App
+from src.alumnifinder.gui.app import App
 
 if __name__ == '__main__':
     root = Tk()  # initializes tkinter

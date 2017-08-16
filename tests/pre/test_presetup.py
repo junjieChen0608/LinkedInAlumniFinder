@@ -1,5 +1,5 @@
 class TestPreSetup:
-    """Contains pre-integration tests."""
+    """Contains pre-setup tests. Checks to make sure packages outside of pip are installed."""
 
     def test_tkinter(self):
         """Checks if Tkinter is pre-installed."""

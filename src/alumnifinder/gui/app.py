@@ -5,14 +5,13 @@ from sys import platform
 from tkinter import *
 from tkinter import filedialog as fd
 
-from alumnifinder.excel.handler import Handler
-from alumnifinder.finder.crawler import Crawler
-from alumnifinder.gui import images
+from src.alumnifinder.excel.handler import Handler
+from src.alumnifinder.finder.crawler import Crawler
+from src.alumnifinder.gui import images
 
 import pandas as pd
 
 validFileTypes = ("*.xlsx", "*.xls")
-miDict = {}
 
 class App:
     def __init__(self, master):
@@ -22,6 +21,7 @@ class App:
         frame = Frame(master)
         frame.pack()
         frame.config(padx=5, pady=5)
+        self.client_entry = {}
 
         try:
             self.logo = PhotoImage(file=images.logo_path)
@@ -122,10 +122,10 @@ class App:
     # method to set the default save dir when a file is chosen. Sets the same
     # dir that the file is in as default
     def set_save_dir(self, filePath):
-        # if platform.startswith("linux"):
-        #     pathArr = filePath.split('\\')
-        # else:
-        pathArr = filePath.split('/')
+        if platform.startswith("linux") or platform.startswith("darwin"):
+            pathArr = filePath.split('\\')
+        else:
+            pathArr = filePath.split('/')
 
         # this cuts off the file name held at last index of pathAr.
         # the ' - 1' cuts off the last slash from dir name
@@ -135,35 +135,6 @@ class App:
         self.rightSavePathEntry.delete(0, last=END)
         self.rightSavePathEntry.insert(0, filePath[:endOfDir])
         self.rightSavePathEntry.config(state="readonly")
-
-    def ok_button(self):
-        if self.rightFilePathEntry.get() == '':
-            self.error_pop_up("Please choose a file to search from.")
-        elif self.rightSavePathEntry.get() == '':
-            self.error_pop_up("Please choose a save location.")
-        else:
-            miDict["geolocation"] = self.e1.get().strip()
-            miDict["jobPosition"] = self.e2.get().strip()
-            miDict["startRow"] = self.e3.get().strip()
-            miDict["endRow"] = self.e4.get().strip()
-            print(miDict)
-            # search range error checking
-            if self.check_search_range(miDict):
-                start_row_int = int(miDict["startRow"]) if miDict["startRow"] else None
-                end_row_int = int(miDict["endRow"]) if miDict["endRow"] else None
-                excel = Handler(self.rightFilePathEntry.get(), start_row_int, end_row_int)
-                # TODO [DOCKER] split the divided data frame to multiple crawlers
-
-                # TODO create a output excel file that all crawlers can access to
-                columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                           'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
-                output_frame = self.get_output_frame(columns)
-                c = Crawler(excel.divided_data_frame, output_frame,**miDict)
-                c.crawl_linkedin()
-                # TODO save the output excel file to designated path
-                self.save_file(output_frame,columns)
-            else:
-                return
 
     def get_output_frame(self, columns: list) -> pd.DataFrame:
         """generate a pandas DataFrame to write search result
@@ -190,9 +161,9 @@ class App:
         worksheet.set_column('A:'+chr(ord('A')+size-1), 25)
         writer.save()
 
-    def check_search_range(self, miDict: dict) -> bool:
-        start = miDict["startRow"]
-        end = miDict["endRow"]
+    def check_search_range(self) -> bool:
+        start = self.client_entry["startRow"]
+        end = self.client_entry["endRow"]
         if not start and not end:
             return True
         elif not start or not end:
@@ -233,3 +204,71 @@ class App:
         top.grab_set()
         self.master.wait_window(top)
         top.grab_release()
+
+    def check_path_save(self):
+        """Checks file and save path"""
+        if self.rightFilePathEntry.get() == '':
+            self.error_pop_up("Please choose a file to search from.")
+        elif self.rightSavePathEntry.get() == '':
+            self.error_pop_up("Please choose a save location.")
+        else:
+            self.client_entry['geo_location'] = self.e1.get().strip()
+            self.client_entry['job_position'] = self.e2.get().strip()
+
+    def check_start_end(self):
+        """Checks start and end rows"""
+        if self.e3.get().strip() != '' and self.e4.get().strip() == '':
+            self.error_pop_up("Please enter an end row.")
+        elif self.e3.get().strip() == '' and self.e4.get().strip() != '':
+            self.error_pop_up("Please enter a start row.")
+        elif self.e3.get().strip() != '' and self.e4.get().strip() != '':
+            try:
+                self.client_entry['startRow'] = int(self.e3.get().strip())
+                self.client_entry['endRow'] = int(self.e4.get().strip())
+            except ValueError:
+                self.error_pop_up("Please enter a valid integer.")
+
+            # TODO: add more error catching
+            if self.client_entry['startRow'] < 0:
+                self.error_pop_up("Start row cannot be negative.")
+            elif self.client_entry['startRow'] >= 0 and self.client_entry['startRow'] < 2:
+                self.error_pop_up("Excel file contains headers, start row cannot be less than 2.")
+            elif self.client_entry['endRow'] < 0:
+                self.error_pop_up("End row cannot be negative.")
+            elif self.client_entry['startRow'] > self.client_entry['endRow']:
+                self.error_pop_up("Start row cannot be larger than the end row.")
+            elif self.client_entry['endRow'] < self.client_entry['startRow']:
+                self.error_pop_up("End row cannot be smaller than the start row.")
+        else:
+            pass  # start and end rows not being used
+
+    def ok_button(self):
+        self.check_path_save()
+        self.check_start_end()
+        if self.rightFilePathEntry.get() == '':
+            self.error_pop_up("Please choose a file to search from.")
+        elif self.rightSavePathEntry.get() == '':
+            self.error_pop_up("Please choose a save location.")
+        else:
+            self.client_entry["geolocation"] = self.e1.get().strip()
+            self.client_entry["jobPosition"] = self.e2.get().strip()
+            self.client_entry["startRow"] = self.e3.get().strip()
+            self.client_entry["endRow"] = self.e4.get().strip()
+            print(self.client_entry)
+            # search range error checking
+            if self.check_search_range():
+                start_row_int = int(self.client_entry["startRow"]) if self.client_entry["startRow"] else None
+                end_row_int = int(self.client_entry["endRow"]) if self.client_entry["endRow"] else None
+                excel = Handler(self.rightFilePathEntry.get(), start_row_int, end_row_int)
+                # TODO [DOCKER] split the divided data frame to multiple crawlers
+
+                # TODO create a output excel file that all crawlers can access to
+                columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                           'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+                output_frame = self.get_output_frame(columns)
+                c = Crawler(excel.divided_data_frame, output_frame, **self.client_entry)
+                c.crawl_linkedin()
+                # TODO save the output excel file to designated path
+                self.save_file(output_frame, columns)
+            else:
+                return

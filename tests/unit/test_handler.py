@@ -1,21 +1,13 @@
 import pandas as pd
 
-from alumnifinder.excel.handler import Handler
+from src.alumnifinder.excel.handler import Handler
 
 
 class TestHandler:
     def test_xlsx_has_headers(self, xlsx_file):
-        headers = Handler(xlsx_file).get_headers()
+        headers = Handler(xlsx_file).check_headers()
         assert type(headers) is list
         assert len(headers) > 0
-
-    def test_find_indices(self, xls_file):
-        h = Handler(xls_file)
-        targets = h.find_indexes()
-        assert len(targets) > 0
-        for key, val in targets.items():
-            assert type(key) is str
-            assert type(val) is int
 
     def test_split_data(self, xls_file):
         h = Handler(xls_file)
@@ -30,5 +22,5 @@ class TestHandler:
     def test_iter(self, xls_file):
         h = Handler(xls_file)
         for index, row in h.data.iterrows():
-            pass
-            # print(row)  # for debugging
+            if index == 0:
+                pass

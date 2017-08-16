@@ -1,6 +1,6 @@
 import pandas as pd
 
-from alumnifinder.finder.crawler import Crawler
+from src.alumnifinder.finder.crawler import Crawler
 
 
 class TestCrawler:

@@ -1,10 +1,10 @@
 import logging
 import random
 import re
+import time
 from sys import platform
 
 import pandas as pd
-import time
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -12,8 +12,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
-from alumnifinder.finder import drivers
-from alumnifinder.utils import jsonreader
+from src.alumnifinder.finder import drivers
+from src.alumnifinder.utils import jsonreader
 
 # logger
 logger = logging.getLogger(__name__)
@@ -133,6 +133,7 @@ class Crawler:
             else:
                 logger.warning('{}: FAILED.'.format(LOG_PHASE))
                 self.driver.get('https://www.linkedin.com')  # try-again with a different account
+                self.driver.delete_all_cookies()
 
         msg = '{}: Could not login with any credentials.'.format(LOG_PHASE)  # All credentials failed
         logger.exception(msg)
@@ -425,7 +426,7 @@ class Crawler:
                     elif len(grad_years) == 1:
                         grad_year = grad_years[0].text
 
-                    # logger.debug("graduation year: " + grad_year)
+                    logger.debug("graduation year: " + grad_year)
                     if self.check_gradyear(grad_year, str(int(gradyrs_col))):
                         logger.debug("graduation year match.")
                         local_score += 1

@@ -1,4 +1,4 @@
-from alumnifinder.gui.app import App
+from src.alumnifinder.gui.app import App
 
 
 class TestApp:

@@ -1,0 +1,30 @@
+[
+  {
+    "route": "https://www.linkedin.com/",
+    "xpath": "",
+    "html": [
+      {
+        "valid": true,
+        "target": "login-email",
+        "type": "class"
+      },
+      {
+        "valid": true,
+        "target": "login-password",
+        "type": "class"
+      },
+      {
+        "valid": true,
+        "target": "login-submit",
+        "type": "id"
+      }
+    ],
+    "phase": "login-page"
+  },
+  {
+    "route": "https://www.linkedin.com/feed/",
+    "xpath": "//*[@class=\"ember-text-field ember-view\"]",
+    "html": [],
+    "phase": "search-bar"
+  }
+]
