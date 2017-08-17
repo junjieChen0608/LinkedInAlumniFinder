@@ -1,10 +1,10 @@
 import logging
 import random
 import re
-import time
 from sys import platform
+from time import sleep
 
-import pandas as pd
+from pandas import Series, DataFrame
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -13,7 +13,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 from src.alumnifinder.finder import drivers
-from src.alumnifinder.utils import jsonreader
+from src.alumnifinder.utils import jsonreader as json
 
 # logger
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class Crawler:
         row_index(int): row index that indicates which row is currently being modified
     """
 
-    def __init__(self, input_data: pd.DataFrame, output_data: pd.DataFrame, **kwargs: dict):
+    def __init__(self, input_data: DataFrame, output_data: DataFrame, **kwargs: dict):
         """Initializes Crawler class with optional arguments."""
         self.input_data = input_data
         self.output_data = output_data
@@ -92,7 +92,7 @@ class Crawler:
         log_phase = 'Pause'
         to_pause = random.randint(2, 4)
         logger.debug('{}: Paused for '.format(log_phase) + str(to_pause) + 's')
-        time.sleep(to_pause)
+        sleep(to_pause)
 
     def login(self) -> None:
         """WebDriver finds web elements for login and performs login actions.
@@ -109,7 +109,7 @@ class Crawler:
         """
         log_phase = 'Login'
         logger.debug('{}: Attempting to login...'.format(log_phase))
-        for account in jsonreader.get_credentials():
+        for account in json.get_credentials():
             logger.debug('{}: Finding web element(s)...'.format(log_phase))
             try:
                 login_email = WebDriverWait(self.driver, 10).until(
@@ -257,7 +257,7 @@ class Crawler:
         self.output_data.at[self.row_index, 'FIRST_NAME'] = ''
         self.row_index += 1
 
-    def verify_jobs(self, row: pd.Series) -> int:
+    def verify_jobs(self, row: Series) -> int:
         """verify job history, check if input job title matches the latest job tile in this profile link"""
         logger.debug('Verifying jobs...')
         local_score = 0
@@ -368,7 +368,7 @@ class Crawler:
                 local_score += 1
         return local_score
 
-    def verify_degrees(self, row: pd.Series) -> int:
+    def verify_degrees(self, row: Series) -> int:
         """verify education data of this link, i.e., school name, major, grad year"""
         logger.debug('Verifying degrees...')
         local_score = 0

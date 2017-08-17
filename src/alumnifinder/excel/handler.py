@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from pandas import read_excel, DataFrame
 
 
 class Handler:
@@ -31,7 +31,7 @@ class Handler:
             self.divided_data = self.data
             self.divided_data_size = len(self.data)
 
-    def read_excel(self, excel_file: str) -> pd.DataFrame:
+    def read_excel(self, excel_file: str) -> DataFrame:
         """Determines which engine to use based on type of excel file.
 
         Args:
@@ -45,9 +45,9 @@ class Handler:
             ValueError: Any file type other than excel.
         """
         if excel_file.endswith(".xls"):
-            return pd.read_excel(excel_file, engine='xlrd')
+            return read_excel(excel_file, engine='xlrd')
         elif excel_file.endswith(".xlsx"):
-            return pd.read_excel(excel_file)
+            return read_excel(excel_file)
         else:
             raise ValueError("Invalid file type.")
 

@@ -1,4 +1,3 @@
-# Created by .ignore support plugin (hsz.mobi)
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -48,19 +47,6 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# PyBuilder
-target/
-
-# pyenv
-.python-version
-
-# dotenv
-.env
 
 # virtualenv
 .venv

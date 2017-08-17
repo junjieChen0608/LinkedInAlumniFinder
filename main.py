@@ -1,4 +1,4 @@
-from tkinter import *
+from tkinter import Tk
 
 from src.alumnifinder.gui.app import App
 

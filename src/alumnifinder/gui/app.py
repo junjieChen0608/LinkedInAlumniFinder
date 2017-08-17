@@ -1,14 +1,11 @@
-from sys import platform
-from tkinter import *
+import tkinter
 from tkinter import filedialog as fd
 
-import pandas as pd
+from pandas import ExcelWriter, DataFrame
 
 from src.alumnifinder.excel.handler import Handler
 from src.alumnifinder.finder.crawler import Crawler
 from src.alumnifinder.gui import images
-
-valid_file_types = ("*.xlsx", "*.xls")
 
 
 class App:
@@ -16,69 +13,69 @@ class App:
         self.master = master  # used to access master in other functions
         master.title("UB LinkedIn Alumni People Finder")
         master.resizable(width=False, height=False)
-        frame = Frame(master)
+        frame = tkinter.Frame(master)
         frame.pack()
         frame.config(padx=5, pady=5)
         self.client_entry = {}
 
         try:
-            self.logo = PhotoImage(file=images.logo_path)
-            self.error_icon = PhotoImage(file=images.error_icon_path)
+            self.logo = tkinter.PhotoImage(file=images.logo_path)
+            self.error_icon = tkinter.PhotoImage(file=images.error_icon_path)
         except FileNotFoundError as e:
             raise e
 
         self.logo = self.logo.subsample(5, 5)
-        self.ub_logo = Label(frame, image=self.logo)
+        self.ub_logo = tkinter.Label(frame, image=self.logo)
         self.ub_logo.grid(row=0)
         master.tk.call('wm', 'iconphoto', master._w, self.logo)  # sets UB logo as icon
 
-        self.app_title = Label(frame, text="UB LinkedIn Alumni People Finder")
+        self.app_title = tkinter.Label(frame, text="UB LinkedIn Alumni People Finder")
         self.app_title.grid(row=0, column=0, columnspan=3)
 
         # left side; manual option fields
         start_row = 2
-        self.left_label = Label(frame, text="Enter Search Criteria.")
+        self.left_label = tkinter.Label(frame, text="Enter Search Criteria.")
         self.left_label.grid(row=1, columnspan=2)
-        self.l1 = Label(frame, text="Geolocation: ")
-        self.l2 = Label(frame, text="Job Position/Title: ")
-        self.l3 = Label(frame, text="Start Row: ")
-        self.l4 = Label(frame, text="End Row: ")
+        self.l1 = tkinter.Label(frame, text="Geolocation: ")
+        self.l2 = tkinter.Label(frame, text="Job Position/Title: ")
+        self.l3 = tkinter.Label(frame, text="Start Row: ")
+        self.l4 = tkinter.Label(frame, text="End Row: ")
         # self.l5 = Label(frame, text="Major: ")
         # self.l6 = Label(frame, text="Degree: ")
-        self.l1.grid(row=start_row, sticky=W)
-        self.l2.grid(row=start_row + 1, sticky=W)
-        self.l3.grid(row=start_row + 2, sticky=W)
-        self.l4.grid(row=start_row + 3, sticky=W)
+        self.l1.grid(row=start_row, sticky=tkinter.W)
+        self.l2.grid(row=start_row + 1, sticky=tkinter.W)
+        self.l3.grid(row=start_row + 2, sticky=tkinter.W)
+        self.l4.grid(row=start_row + 3, sticky=tkinter.W)
 
-        self.e1 = Entry(frame)  # geolocation
-        self.e2 = Entry(frame)  # job position/title
-        self.e3 = Entry(frame)  # start row
-        self.e4 = Entry(frame)  # end row
+        self.e1 = tkinter.Entry(frame)  # geolocation
+        self.e2 = tkinter.Entry(frame)  # job position/title
+        self.e3 = tkinter.Entry(frame)  # start row
+        self.e4 = tkinter.Entry(frame)  # end row
         self.e1.grid(row=start_row, column=1)
         self.e2.grid(row=start_row + 1, column=1)
         self.e3.grid(row=start_row + 2, column=1)
         self.e4.grid(row=start_row + 3, column=1)
 
-        ok_button = Button(frame, text="   OK   ", command=self.ok_button)
+        ok_button = tkinter.Button(frame, text="   OK   ", command=self.ok_button)
         ok_button.grid(row=start_row + 6, columnspan=5, pady=5)
         # end manual option fields
 
         # right side, file explorer for excel file
-        self.right_lable = Label(frame, text="Search for a document.")
+        self.right_lable = tkinter.Label(frame, text="Search for a document.")
         self.right_lable.grid(row=1, column=2, padx=5)
-        self.right_file_path_entry = Entry(frame)
+        self.right_file_path_entry = tkinter.Entry(frame)
         self.right_file_path_entry.config(state="readonly", width=35)
         self.right_file_path_entry.grid(row=start_row, column=2, padx=5)
-        open_file_button = Button(frame, text="...", command=self.search_file)
+        open_file_button = tkinter.Button(frame, text="...", command=self.search_file)
         open_file_button.grid(row=start_row, column=3)
 
-        self.right_save_label = Label(frame, text="Choose a save location")
+        self.right_save_label = tkinter.Label(frame, text="Choose a save location")
         self.right_save_label.grid(row=start_row + 1, column=2, padx=5)
-        self.right_save_path_entry = Entry(frame)
+        self.right_save_path_entry = tkinter.Entry(frame)
 
         self.right_save_path_entry.config(state="readonly", width=35)
         self.right_save_path_entry.grid(row=start_row + 2, column=2, padx=5)
-        save_file_button = Button(frame, text="...", command=self.search_save)
+        save_file_button = tkinter.Button(frame, text="...", command=self.search_save)
         save_file_button.grid(row=start_row + 2, column=3)
 
     # end file input
@@ -88,12 +85,13 @@ class App:
         if save_location is None:
             print("No file selected")
         else:
-            self.right_save_path_entry.config(state=NORMAL)
-            self.right_save_path_entry.delete(0, last=END)
+            self.right_save_path_entry.config(state=tkinter.NORMAL)
+            self.right_save_path_entry.delete(0, last=tkinter.END)
             self.right_save_path_entry.insert(0, save_location)
             self.right_save_path_entry.config(state="readonly")
 
     def search_file(self):
+        valid_file_types = ("*.xlsx", "*.xls")
         file = fd.askopenfile(initialdir="/", title="Select file",  # returns a file
                               filetypes=[("Excel Files", valid_file_types), ("All Files", "*.*")])
         # xlsx
@@ -112,8 +110,8 @@ class App:
             else:
                 if self.right_save_path_entry.get() == "":
                     self.set_save_dir(file.name)
-                self.right_file_path_entry.config(state=NORMAL)
-                self.right_save_path_entry.delete(0, last=END)
+                self.right_file_path_entry.config(state=tkinter.NORMAL)
+                self.right_save_path_entry.delete(0, last=tkinter.END)
                 self.right_file_path_entry.insert(0, file.name)
                 self.right_file_path_entry.config(state="readonly")
 
@@ -126,27 +124,27 @@ class App:
         # the ' - 1' cuts off the last slash from dir name
         end_of_dir = len(file_path) - len(path_arr[-1]) - 1
 
-        self.right_save_path_entry.config(state=NORMAL)
-        self.right_save_path_entry.delete(0, last=END)
+        self.right_save_path_entry.config(state=tkinter.NORMAL)
+        self.right_save_path_entry.delete(0, last=tkinter.END)
         self.right_save_path_entry.insert(0, file_path[:end_of_dir])
         self.right_save_path_entry.config(state="readonly")
 
-    def get_output_frame(self, columns: list) -> pd.DataFrame:
+    def get_output_frame(self, columns: list) -> DataFrame:
         """generate a pandas DataFrame to write search result
 
         Returns:
             pandas DataFrame
         """
-        output_frame = pd.DataFrame(data='', index=[0], columns=columns)
+        output_frame = DataFrame(data='', index=[0], columns=columns)
         return output_frame
 
-    def save_file(self, output_frame: pd.DataFrame, columns: list) -> None:
+    def save_file(self, output_frame: DataFrame, columns: list) -> None:
         """Format the DataFrame and save it as Excel file
 
          Args:
              output_frame(pandas DataFrame): the instance of DataFrame that used by the crawler
         """
-        writer = pd.ExcelWriter(self.right_save_path_entry.get() + '/output.xlsx', engine='xlsxwriter')
+        writer = ExcelWriter(self.right_save_path_entry.get() + '/output.xlsx', engine='xlsxwriter')
         output_frame.to_excel(writer, index=False, sheet_name='Sheet1')
         workbook = writer.book
         workbook.set_size(2800, 1200)
@@ -157,12 +155,12 @@ class App:
         writer.save()
 
     def error_pop_up(self, text):
-        top = Toplevel()
+        top = tkinter.Toplevel()
         top.title("Error")
         top.iconphoto(top._w, self.error_icon)
         top.configure(width=100)
         top.resizable(width=False, height=False)
-        message = Message(top, text=text, justify="center")
+        message = tkinter.Message(top, text=text, justify="center")
         message.configure(width=250, padx=25, pady=25)
         message.pack()
 
@@ -234,32 +232,30 @@ class App:
         else:
             return True  # start and end rows not being used
 
-    def check_start_end_types(self, start, end) -> bool:
+    def is_int(self, start_row: str, end_row: str) -> bool:
         """Checks correct types"""
         try:
-            int(start)
-            int(end)
+            int(start_row)
+            int(end_row)
             return True
         except ValueError:
             return False
 
     def ok_button(self):
         if self.check_path_save(file_path=self.right_file_path_entry.get(), save_path=self.right_save_path_entry.get()):
-            if self.check_start_end(start_row=self.e3.get().strip(), end_row=self.e4.get().strip()):
+            start_row = self.e3.get().strip()
+            end_row = self.e4.get().strip()
+            if self.check_start_end(start_row=start_row, end_row=end_row):  # XNOR check with start/end rows
                 self.client_entry["geolocation"] = self.e1.get().strip()
                 self.client_entry["job_position"] = self.e2.get().strip()
-                if self.check_start_end_types(start=self.e3.get().strip(), end=self.e4.get().strip()):
-                    self.client_entry["start_row"] = int(self.e3.get().strip())
-                    self.client_entry["end_row"] = int(self.e4.get().strip())
-                    # print(self.client_entry)
+                if self.is_int(start_row=start_row, end_row=end_row):  # start/end both specified
+                    self.client_entry["start_row"] = int(start_row)
+                    self.client_entry["end_row"] = int(end_row)
                     start_row = self.client_entry["start_row"]
                     end_row = self.client_entry["end_row"]
                     self.ok_button_helper(start_row=start_row, end_row=end_row)
-                else:
+                else:  # start/end both empty
                     self.ok_button_helper()
-        else:
-                # TODO: check other case
-                pass
 
     def ok_button_helper(self, start_row=None, end_row=None) -> None:
         excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)

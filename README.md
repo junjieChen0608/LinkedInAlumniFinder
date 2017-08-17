@@ -2,11 +2,11 @@
 
 The objective of this project is to develop a standalone application that leverages the LinkedIn API so that alumni relations officers can upload a list of UB alumni from their database and find them on LinkedIn.
 
-## Build
+## Build :wrench:
 
 Clone repository and go to project root directory
 
-Install Python Packages
+Install Python Packages :package:
 
 ```
 $ pip3 install -r requirements.txt
@@ -20,21 +20,15 @@ $ make build
 
 Windows
 
-* Note: Follow [instructions](https://pythonhosted.org/PyInstaller/installation.html#installing-in-windows) before building
+* Note: Follow Pyinstaller [instructions](https://pythonhosted.org/PyInstaller/installation.html#installing-in-windows) before building
 
 ```
 > .\winbuild.bat
 ```
 
-Executable should then be located in '*dist*' directory
+Executable should then be located in '***dist***' directory
 
-## CLI
-
-```
-$ python cli.py --help 
-```
-
-## Tests
+## Tests :pill:
 
 Change to project root directory:
 
