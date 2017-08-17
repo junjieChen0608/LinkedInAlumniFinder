@@ -27,8 +27,9 @@ class Handler:
             self.start_row, self.end_row = self.parse_search_range(start, end)
             self.divided_data = self.data.iloc[self.start_row:self.end_row]
             self.divided_data_size = len(self.divided_data)
-        elif (start and not end) or (not start and end):
-            raise ValueError('Not enough start/end arguments.')
+        elif not start and not end:
+            self.divided_data = self.data
+            self.divided_data_size = len(self.data)
 
     def read_excel(self, excel_file: str) -> pd.DataFrame:
         """Determines which engine to use based on type of excel file.

@@ -254,24 +254,22 @@ class App:
                 if self.check_start_end_types(start=self.e3.get().strip(), end=self.e4.get().strip()):
                     self.client_entry["start_row"] = int(self.e3.get().strip())
                     self.client_entry["end_row"] = int(self.e4.get().strip())
-
-                    print(self.client_entry)
-
+                    # print(self.client_entry)
                     start_row = self.client_entry["start_row"]
                     end_row = self.client_entry["end_row"]
-
-                    excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)
-
-                    # TODO create a output excel file that all crawlers can access to
-                    columns = ['FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                               'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
-                    output_frame = self.get_output_frame(columns)
-                    c = Crawler(input_data=excel.divided_data, output_data=output_frame, **self.client_entry)
-                    c.crawl_linkedin()
-                    # TODO save the output excel file to designated path
-                    self.save_file(output_frame, columns)
+                    self.ok_button_helper(start_row=start_row, end_row=end_row)
                 else:
-                    pass
-            else:
+                    self.ok_button_helper()
+        else:
                 # TODO: check other case
                 pass
+
+    def ok_button_helper(self, start_row=None, end_row=None) -> None:
+        excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)
+
+        columns = ['ROW_NUMBER_FROM_INPUT','FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
+                   'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+        output_frame = self.get_output_frame(columns)
+        c = Crawler(input_data=excel.divided_data, output_data=output_frame, **self.client_entry)
+        c.crawl_linkedin()
+        self.save_file(output_frame, columns)

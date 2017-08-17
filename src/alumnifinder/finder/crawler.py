@@ -49,14 +49,14 @@ class Crawler:
         """Initializes Crawler class with optional arguments."""
         self.input_data = input_data
         self.output_data = output_data
-        self.row_index = 0
         self.geolocation = kwargs['geolocation'] if 'geolocation' in kwargs else ""
         self.job_position = kwargs['job_position'] if 'job_position' in kwargs else ""
+        self.row_index = 0
+        self.row_counter = int(kwargs["start_row"]) if "start_row" in kwargs else 2
         self.driver = None
         self.start_region = 'Buffalo'
         self.row_first_name = ""
         self.row_last_name = ""
-        self.row_counter = int(kwargs["start_row"])  # TODO: fix, assumes 'start_row' is always provided
 
     def setup_driver(self) -> None:
         """Locates path of WebDriver Chrome executable and sets it to the driver.
