@@ -4,6 +4,8 @@ The objective of this project is to develop a standalone application that levera
 
 ## Build
 
+Clone repository and go to project root directory
+
 Install Python Packages
 
 ```
@@ -18,12 +20,10 @@ $ make build
 
 Windows
 
+* Note: Follow [instructions](https://pythonhosted.org/PyInstaller/installation.html#installing-in-windows) before building
+
 ```
-> pyinstaller --onefile --noconsole --clean ^
-	--add-binary src\alumnifinder\finder\drivers\;src\alumnifinder\finder\drivers\ ^
-	--add-data src\alumnifinder\gui\images\;src\alumnifinder\gui\images\ ^
-	--add-data src\alumnifinder\config\;src\alumnifinder\config\ ^
-	main.py
+> .\winbuild.bat
 ```
 
 Executable should then be located in '*dist*' directory
