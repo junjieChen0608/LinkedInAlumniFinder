@@ -1,10 +1,14 @@
-.PHONY: build clean docker-image run test virtualenv
+.PHONY: build clean test virtualenv
 
 PYTHON_BIN := $(VIRTUAL_ENV)/bin
 
 build:
 	@echo "BUILD START"
-	pyinstaller --onefile --noconsole main.py
+	pyinstaller --onefile --noconsole --clean \
+	--add-binary src/alumnifinder/finder/drivers/:src/alumnifinder/finder/drivers/ \
+	--add-data src/alumnifinder/gui/images/:src/alumnifinder/gui/images/ \
+	--add-data src/alumnifinder/config/:src/alumnifinder/config/ \
+	main.py
 	@echo "BUILD COMPLETE"
 
 clean:
@@ -12,12 +16,6 @@ clean:
 	@rm -rf dist/
 	@rm -rf build/
 	@rm -rf __pycache__/
-
-docker-image:
-	docker build -t alumni-finder-machine .
-
-run:
-	python main.py --gui
 
 test:
 	pytest -n 4 --capture=no
