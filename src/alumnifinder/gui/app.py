@@ -120,10 +120,7 @@ class App:
     # method to set the default save dir when a file is chosen. Sets the same
     # dir that the file is in as default
     def set_save_dir(self, file_path):
-        if platform.startswith("linux") or platform.startswith("darwin"):
-            path_arr = file_path.split('\\')
-        else:
-            path_arr = file_path.split('/')
+        path_arr = file_path.split('/')
 
         # this cuts off the file name held at last index of pathAr.
         # the ' - 1' cuts off the last slash from dir name
