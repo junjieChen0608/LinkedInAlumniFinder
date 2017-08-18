@@ -325,9 +325,11 @@ class Crawler:
             # record job description for the latest job
             if not latest_job_info:
                 latest_job_info = temp_job_info
-                off_set = latest_job_info.find('Location') + len('Location') + 1
-                # TODO 7, mark work location to output's COMPANY_LOCATION column
-                self.output_data.at[self.row_index, 'COMPANY_LOCATION'] = latest_job_info[off_set:].replace("\n", "")
+                location_index = latest_job_info.find('Location')
+                if location_index != -1:
+                    off_set = location_index + len('Location') + 1
+                    # TODO 7, mark work location to output's COMPANY_LOCATION column
+                    self.output_data.at[self.row_index, 'COMPANY_LOCATION'] = latest_job_info[off_set:].replace("\n", "")
 
             # check if current job is empty in the spreadsheet, if yes, just replace it with latest job from LinkedIn
             # and break the loop
