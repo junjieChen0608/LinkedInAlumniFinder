@@ -1,6 +1,6 @@
 # AlumniFinder
 
-The objective of this project is to develop a standalone application that leverages the LinkedIn API so that alumni relations officers can upload a list of UB alumni from their database and find them on LinkedIn.
+The objective of this project is to develop a standalone application that automates the human user's "search and match" procedure, so that alumni relations officers can upload a list of UB alumni from their database and find them on LinkedIn.
 
 ## Build :wrench:
 
