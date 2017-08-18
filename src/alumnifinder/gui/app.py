@@ -113,6 +113,7 @@ class App:
                     self.set_save_dir(file.name)
                 self.right_file_path_entry.config(state=tkinter.NORMAL)
                 self.right_save_path_entry.delete(0, last=tkinter.END)
+                self.right_file_path_entry.delete(0, last=tkinter.END)
                 self.right_file_path_entry.insert(0, file.name)
                 self.right_file_path_entry.config(state="readonly")
                 # parse input file name from the absolute path

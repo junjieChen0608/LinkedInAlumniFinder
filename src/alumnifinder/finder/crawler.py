@@ -191,14 +191,14 @@ class Crawler:
             logger.debug('{}: No match found.'.format(log_phase))
             return []
 
-    def coarse_filter(self, potential_divs: list, result_set: set) -> None:
+    def coarse_filter(self, potential_divs: list, result_list: list) -> None:
         """Populate the result set with coarse-grain filtered result for further evaluation.
 
         Linkedin occasionally returns irrelevant search results for unknown reason
 
         Args:
             potential_divs (list):
-            result_set (set):
+            result_list (list):
         """
         log_phase = 'Coarse-Filter'
         logger.debug('{}: Starting filter...'.format(log_phase))
@@ -224,7 +224,7 @@ class Crawler:
                     self.output_data.at[local_row_index,"PROFILE_LINK"] = profile_link
                     # TODO 3, increment the row index(local)
                     local_row_index+=1
-                    result_set.add(profile_link)
+                    result_list.append(profile_link)
             except NoSuchElementException:
                 msg = '{}: Web element could not be found.'.format(log_phase)
                 logger.exception(msg)
@@ -233,16 +233,16 @@ class Crawler:
                 msg = '{}: Web element lost.'.format(log_phase)
                 logger.exception(msg)
                 raise StaleElementReferenceException(msg)
-        log_result = str(len(result_set))
+        log_result = str(len(result_list))
         logger.debug('{}: \"{}\" candidates survived from coarse-grain filter.'.format(log_phase, log_result))
 
-    def fine_filter(self, potential_link_set: set, row) -> None:
+    def fine_filter(self, potential_links: list, row) -> None:
         """fine-grain filter that evaluates accuracy score of all candidate profile links"""
         log_phase = 'Fine-Filter'
-        log_set_num = str(len(potential_link_set))
+        log_set_num = str(len(potential_links))
         logger.debug('{}: Checking \"{}\" candidates profile links...'.format(log_phase, log_set_num))
         logger.debug('=' * 100)
-        for link in potential_link_set:
+        for link in potential_links:
             logger.debug('{}: Clicked: {}'.format(log_phase, link))
             self.driver.get(link)
             score = 0
@@ -485,16 +485,16 @@ class Crawler:
         if len(potential_divs) == 0:
             logger.debug("{}: No match for [".format(log_phase) + self.row_first_name + " " + self.row_last_name + "]")
             return
-        potential_link_set = set()
+        potential_links = []
         logger.debug("{}: \"{}\" potential div(s) entering coarse-grain filter".format(log_phase, log_div))
-        self.coarse_filter(potential_divs, potential_link_set)  # coarse grain filter
-        if len(potential_link_set) == 0:
+        self.coarse_filter(potential_divs, potential_links)  # coarse grain filter
+        if len(potential_links) == 0:
             return
         # TODO 4, mark current search key words to the output's FIRST_NAME, LAST_NAME column
         self.output_data.at[self.row_index, "ROW_NUMBER"] = self.row_counter
         self.output_data.at[self.row_index, "ID_NUMBER"] = row['ID_NUMBER']
         self.output_data.at[self.row_index,"KEYWORD"] = row['FIRST_NAME'] + " " + row['LAST_NAME']
-        self.fine_filter(potential_link_set, row)  # fine grain filter
+        self.fine_filter(potential_links, row)  # fine grain filter
 
     def crawl_linkedin(self):
         """main routine for UI invocation"""
