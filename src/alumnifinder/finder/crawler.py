@@ -254,7 +254,8 @@ class Crawler:
             logger.debug('=' * 100 + "\n")
             # TODO 9, increment row index(global)
             self.row_index+=1
-        self.output_data.at[self.row_index, 'FIRST_NAME'] = ''
+        # add this line to seperate search results
+        self.output_data.at[self.row_index, 'ROW_NUMBER'] = ""
         self.row_index += 1
 
     def verify_jobs(self, row: Series) -> int:
@@ -488,9 +489,9 @@ class Crawler:
         if len(potential_link_set) == 0:
             return
         # TODO 4, mark current search key words to the output's FIRST_NAME, LAST_NAME column
-        self.output_data.at[self.row_index,"FIRST_NAME"] = row['FIRST_NAME']
-        self.output_data.at[self.row_index, "LAST_NAME"] = row['LAST_NAME']
-        self.output_data.at[self.row_index, "ROW_NUMBER_FROM_INPUT"] = self.row_counter
+        self.output_data.at[self.row_index, "ROW_NUMBER"] = self.row_counter
+        self.output_data.at[self.row_index, "ID_NUMBER"] = row['ID_NUMBER']
+        self.output_data.at[self.row_index,"KEYWORD"] = row['FIRST_NAME'] + " " + row['LAST_NAME']
         self.fine_filter(potential_link_set, row)  # fine grain filter
 
     def crawl_linkedin(self):

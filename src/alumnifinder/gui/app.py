@@ -260,8 +260,8 @@ class App:
     def ok_button_helper(self, start_row=None, end_row=None) -> None:
         excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)
 
-        columns = ['ROW_NUMBER_FROM_INPUT','FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                   'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+        columns = ['ROW_NUMBER', 'ID_NUMBER','KEYWORD', 'FULL_NAME_ON_LINKEDIN', 'JOB_TITLE', 'COMPANY_NAME',
+                   'COMPANY_LOCATION', 'PROFILE_LINK', 'ACCURACY_SCORE']
         output_frame = self.get_output_frame(columns)
         c = Crawler(input_data=excel.divided_data, output_data=output_frame, **self.client_entry)
         c.crawl_linkedin()
