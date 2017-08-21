@@ -16,6 +16,7 @@ class App:
         frame = tkinter.Frame(master)
         frame.pack()
         frame.config(padx=5, pady=5)
+        self.input_file_name = ''
         self.client_entry = {}
 
         try:
@@ -112,8 +113,11 @@ class App:
                     self.set_save_dir(file.name)
                 self.right_file_path_entry.config(state=tkinter.NORMAL)
                 self.right_save_path_entry.delete(0, last=tkinter.END)
+                self.right_file_path_entry.delete(0, last=tkinter.END)
                 self.right_file_path_entry.insert(0, file.name)
                 self.right_file_path_entry.config(state="readonly")
+                # parse input file name from the absolute path
+                self.input_file_name = file_extension[0].split('/')[-1]
 
     # method to set the default save dir when a file is chosen. Sets the same
     # dir that the file is in as default
@@ -138,13 +142,19 @@ class App:
         output_frame = DataFrame(data='', index=[0], columns=columns)
         return output_frame
 
-    def save_file(self, output_frame: DataFrame, columns: list) -> None:
+    def save_file(self, output_frame: DataFrame, columns: list, start=None, end=None) -> None:
         """Format the DataFrame and save it as Excel file
 
          Args:
              output_frame(pandas DataFrame): the instance of DataFrame that used by the crawler
         """
-        writer = ExcelWriter(self.right_save_path_entry.get() + '/output.xlsx', engine='xlsxwriter')
+        save_file_name = ''
+        if start and end:
+            save_file_name += '/' + str(start) + '_to_' + str(end) + '_' + self.input_file_name + '.xlsx'
+        else:
+            save_file_name += '/all_range_' + self.input_file_name + '.xlsx'
+
+        writer = ExcelWriter(self.right_save_path_entry.get() + save_file_name, engine='xlsxwriter')
         output_frame.to_excel(writer, index=False, sheet_name='Sheet1')
         workbook = writer.book
         workbook.set_size(2800, 1200)
@@ -260,9 +270,9 @@ class App:
     def ok_button_helper(self, start_row=None, end_row=None) -> None:
         excel = Handler(excel_file=self.right_file_path_entry.get(), start=start_row, end=end_row)
 
-        columns = ['ROW_NUMBER_FROM_INPUT','FIRST_NAME', 'LAST_NAME', 'JOB_TITLE', 'COMPANY_NAME',
-                   'COMPANY_LOCATION', 'FULL_NAME_ON_LINKEDIN', 'PROFILE_LINK', 'ACCURACY_SCORE']
+        columns = ['ROW_NUMBER', 'ID_NUMBER','KEYWORD', 'FULL_NAME_ON_LINKEDIN', 'JOB_TITLE', 'COMPANY_NAME',
+                   'COMPANY_LOCATION', 'PROFILE_LINK', 'ACCURACY_SCORE']
         output_frame = self.get_output_frame(columns)
         c = Crawler(input_data=excel.divided_data, output_data=output_frame, **self.client_entry)
         c.crawl_linkedin()
-        self.save_file(output_frame, columns)
+        self.save_file(output_frame, columns, start=start_row, end=end_row)
