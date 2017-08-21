@@ -18,7 +18,7 @@ clean:
 	@rm -rf __pycache__/
 
 test:
-	pytest -n 4 --capture=no
+	pytest --capture=no
 	@rm -rf .cache/
 
 virtualenv:
