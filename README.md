@@ -23,7 +23,7 @@ Windows
 * Note: Follow Pyinstaller [instructions](https://pythonhosted.org/PyInstaller/installation.html#installing-in-windows) before building
 
 ```
-> .\winbuild.bat
+>>> .\winbuild.bat
 ```
 
 Executable should then be located in '***dist***' directory
