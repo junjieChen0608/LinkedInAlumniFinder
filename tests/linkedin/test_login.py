@@ -1,8 +1,10 @@
+import pytest
 from selenium.common.exceptions import NoSuchElementException
 
 from src.alumnifinder.utils import jsonreader as json
 
 
+@pytest.mark.skip(reason="Cannot currently test.")
 class TestLogin:
     """Contains tests for LinkedIn's login page"""
 
