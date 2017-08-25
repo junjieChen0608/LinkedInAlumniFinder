@@ -78,8 +78,79 @@ class App:
         self.right_save_path_entry.grid(row=start_row + 2, column=2, padx=5)
         save_file_button = tkinter.Button(frame, text="...", command=self.search_save)
         save_file_button.grid(row=start_row + 2, column=3)
-
     # end file input
+
+        self.launch_username_password_input()
+
+    def launch_username_password_input(self):
+        self.up_top = tkinter.Toplevel()
+        self.up_top.title("Enter Credentials")
+        self.up_top.iconphoto(self.up_top._w, self.logo)
+        self.up_top.resizable(width=False, height=False)
+        # this overrides what normally happens when the 'X' button is pressed
+        # the reason we want to do this is because normally if a user presses the 'X'
+        # button it allows them to skip password and username entering and access
+        # the program without a username and password. This would cause problems
+        # so we want to ovveride the 'X' button to kill the entire program
+        # when it is pressed
+        # lambda allows for an argument to be passed
+        self.up_top.protocol('WM_DELETE_WINDOW',self.xbutton_pressed)
+        message = tkinter.Label(self.up_top, text="Enter username and password for dummy account.")
+        message.configure(padx=5, pady=5)
+        message.grid(row=0,column=0,columnspan=3)
+        username_label = tkinter.Label(self.up_top, text="Username:")
+        password_label = tkinter.Label(self.up_top, text="Password:")
+        username_label.grid(row=1,column=0)
+        password_label.grid(row=2,column=0)
+        self.username_entry = tkinter.Entry(self.up_top,width=35)
+        self.password_entry = tkinter.Entry(self.up_top,show="*",width=35)
+        self.username_entry.grid(row=1,column=1,columnspan=2, padx=5, pady=5)
+        self.password_entry.grid(row=2,column=1,columnspan=2, padx=5, pady=5)
+        ok_btn = tkinter.Button(self.up_top,text=" OK ",command=self.username_password_ok)
+        self.show_password_toggle = tkinter.Button(self.up_top,text="Show Password",command=self.show_password)
+        self.showing_password = False;
+        ok_btn.grid(row=3,column=2,padx=5,pady=5)
+        self.show_password_toggle.grid(row=3,column=0,columnspan=2,padx=5,pady=5)
+
+        # position error in center of root window
+        self.up_top.update()  # update gets the latest winfo data
+        root_x = self.master.winfo_x()
+        root_y = self.master.winfo_y()
+        root_width = self.master.winfo_width()
+        root_height = self.master.winfo_height()
+        self.up_top_width = self.up_top.winfo_width()
+        self.up_top_height = self.up_top.winfo_height()
+        final_x = root_x + ((root_width / 2) - (self.up_top_width / 2))
+        final_y = root_y + ((root_height / 2) - (self.up_top_height / 2))
+        self.up_top.geometry("%dx%d+%d+%d" % (self.up_top_width, self.up_top_height, final_x, final_y))
+
+        # grabs focus for self.up_top so bottom window can't be interacted with until self.up_top is gone
+        self.up_top.grab_set()
+
+    def xbutton_pressed(self):
+        self.master.destroy()
+
+    def username_password_ok(self):
+        username = self.username_entry.get().strip()
+        password = self.password_entry.get().strip()
+        if username == '':
+            self.error_pop_up("Username cannot be empty")
+            self.up_top.grab_release()
+        elif password == '':
+            self.error_pop_up("Password cannot be empty")
+            self.up_top.grab_release()
+        else:
+            #TODO store username and password where needed
+            self.up_top.destroy()
+
+    def show_password(self):
+        if(self.showing_password):
+            self.password_entry.configure(show="*")
+            self.show_password_toggle.configure(text="Show Password")
+        else:
+            self.password_entry.configure(show="")
+            self.show_password_toggle.configure(text="Hide Password")
+        self.showing_password = not self.showing_password
 
     def search_save(self):
         save_location = fd.askdirectory(initialdir="/", title="Choose Where to Save")  # returns a string
