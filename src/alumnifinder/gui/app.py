@@ -6,6 +6,7 @@ from pandas import ExcelWriter, DataFrame
 from src.alumnifinder.excel.handler import Handler
 from src.alumnifinder.finder.crawler import Crawler
 from src.alumnifinder.gui import images
+from src.alumnifinder.utils import jsonwriter as json_writer
 
 
 class App:
@@ -91,7 +92,7 @@ class App:
         # the reason we want to do this is because normally if a user presses the 'X'
         # button it allows them to skip password and username entering and access
         # the program without a username and password. This would cause problems
-        # so we want to ovveride the 'X' button to kill the entire program
+        # so we want to override the 'X' button to kill the entire program
         # when it is pressed
         # lambda allows for an argument to be passed
         self.up_top.protocol('WM_DELETE_WINDOW',self.xbutton_pressed)
@@ -140,7 +141,8 @@ class App:
             self.error_pop_up("Password cannot be empty")
             self.up_top.grab_release()
         else:
-            #TODO store username and password where needed
+            #TODO store username and password to creds.json
+            json_writer.store_creds(username, password)
             self.up_top.destroy()
 
     def show_password(self):
